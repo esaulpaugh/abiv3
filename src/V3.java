@@ -37,10 +37,11 @@ public final class V3 {
     static final int SELECTOR_LEN = 4;
 
     public static byte[] toRLP(String functionName, V3Type[] schema, Object[] vals) {
-        return RLPEncoder.sequenceWithPrefix(
-                generateSelector(functionName, schema),
-                serializeTuple(schema, vals)
-        );
+        Iterable<Object> tuple = Arrays.asList(serializeTuple(schema, vals));
+        ByteBuffer encoding = ByteBuffer.allocate(SELECTOR_LEN + RLPEncoder.sumEncodedLen(tuple));
+        encoding.put(generateSelector(functionName, schema));
+        RLPEncoder.putSequence(tuple, encoding);
+        return encoding.array();
     }
 
     public static Object[] fromRLP(String functionName, V3Type[] schema, byte[] rlp) {

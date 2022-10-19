@@ -20,7 +20,7 @@ public final class RLPEncoder {
 
     private RLPEncoder() {}
 
-    private static int sumEncodedLen(Iterable<?> rawItems) {
+    public static int sumEncodedLen(Iterable<?> rawItems) {
         int sum = 0;
         for (Object raw : rawItems) {
             sum += encodedLen(raw);
@@ -28,7 +28,7 @@ public final class RLPEncoder {
         return sum;
     }
 
-    private static int encodedLen(Object raw) {
+    public static int encodedLen(Object raw) {
         if (raw instanceof byte[]) {
             return stringEncodedLen((byte[]) raw);
         }
@@ -109,26 +109,6 @@ public final class RLPEncoder {
             bb.put((byte) (DataType.LIST_LONG_OFFSET + Integers.len(dataLen)));
             Integers.putLong(dataLen, bb);
         }
-    }
-
-    public static byte[] sequenceWithPrefix(byte[] prefix, Object... objects) {
-        return sequenceWithPrefix(prefix, Arrays.asList(objects));
-    }
-
-    public static byte[] sequenceWithPrefix(byte[] prefix, Iterable<Object> objects) {
-        byte[] dest = new byte[prefix.length + sumEncodedLen(objects)];
-        ByteBuffer bb = ByteBuffer.wrap(dest);
-        bb.put(prefix);
-        putSequence(objects, bb);
-        return dest;
-    }
-
-    public static byte[] sequenceWithSuffix(byte[] suffix, Object... objects) {
-        Iterable<Object> list = Arrays.asList(objects);
-        byte[] dest = new byte[sumEncodedLen(list) + suffix.length];
-        System.arraycopy(suffix, 0, dest, dest.length - suffix.length, suffix.length);
-        putSequence(list, ByteBuffer.wrap(dest));
-        return dest;
     }
 
     /**
