@@ -16,11 +16,11 @@
 /** Enumeration of the five RLP data types. */
 public enum DataType {
 
-    SINGLE_BYTE(0, true, false),
-    STRING_SHORT(0x80, true, false),
-    STRING_LONG(0xb7, true, true),
-    LIST_SHORT(0xc0, false, false),
-    LIST_LONG(0xf7, false, true);
+    SINGLE_BYTE(0, true),
+    STRING_SHORT(0x80, true),
+    STRING_LONG(0xb7, true),
+    LIST_SHORT(0xc0, false),
+    LIST_LONG(0xf7, false);
 
     static final byte STRING_SHORT_OFFSET = (byte) 0x80;
     static final byte STRING_LONG_OFFSET = (byte) 0xb7;
@@ -31,12 +31,10 @@ public enum DataType {
 
     public final byte offset;
     public final boolean isString;
-    public final boolean isLong;
 
-    DataType(int offset, boolean isString, boolean isLong) {
+    DataType(int offset, boolean isString) {
         this.offset = (byte) offset;
         this.isString = isString;
-        this.isLong = isLong;
     }
 
     /**
@@ -44,10 +42,10 @@ public enum DataType {
      * @return one of the five enumerated RLP data types
      */
     public static DataType type(final byte leadByte) {
-        if(leadByte <= (byte) 0xB7) return STRING_SHORT;
-        if(leadByte <= (byte) 0xBF) return STRING_LONG;
-        if(leadByte <= (byte) 0xF7) return LIST_SHORT;
-        if(leadByte <= (byte) 0xFF) return LIST_LONG;
+        if(leadByte < (byte) 0xB8) return STRING_SHORT;
+        if(leadByte < (byte) 0xC0) return STRING_LONG;
+        if(leadByte < (byte) 0xF8) return LIST_SHORT;
+        if(leadByte < 0) return LIST_LONG;
         return SINGLE_BYTE;
     }
 }
