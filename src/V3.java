@@ -73,7 +73,7 @@ public final class V3 {
     }
 
     private static Object[] serializeTuple(V3Type[] tupleType, Object[] tuple) {
-        if(tupleType.length != tuple.length) throw new IllegalArgumentException();
+        validateLength(tupleType.length, tuple.length);
         final Object[] out = new Object[tupleType.length];
         for(int i = 0; i < out.length; i++) {
             out[i] = serialize(tupleType[i], tuple[i]);
@@ -186,6 +186,7 @@ public final class V3 {
     }
 
     private static Object serializeBooleanArray(V3Type type, boolean[] booleans) {
+        validateLength(type.arrayLen, booleans.length);
         final byte[] blob = new byte[Integers.roundLengthUp(booleans.length, Byte.SIZE) / Byte.SIZE];
         int offset = 0;
         final int fullBytes = booleans.length / Byte.SIZE;
@@ -250,9 +251,7 @@ public final class V3 {
 
     private static byte[] serializeByteArray(V3Type type, Object arr) {
         byte[] bytes = type.isString ? ((String) arr).getBytes(StandardCharsets.UTF_8) : (byte[]) arr;
-        if(type.arrayLen != -1 && bytes.length != type.arrayLen) {
-            throw new IllegalArgumentException();
-        }
+        validateLength(type.arrayLen, bytes.length);
         return bytes;
     }
 
@@ -261,7 +260,7 @@ public final class V3 {
     }
 
     private static Object[] serializeObjectArray(V3Type type, Object[] objects) {
-        if(type.arrayLen != -1 && objects.length != type.arrayLen) throw new IllegalArgumentException();
+        validateLength(type.arrayLen, objects.length);
         final Object[] out = new Object[objects.length];
         for (int i = 0; i < objects.length; i++) {
             out[i] = serialize(type.elementType, objects[i]);
@@ -276,5 +275,9 @@ public final class V3 {
             in[i] = deserialize(type.elementType, elements.get(i));
         }
         return in;
+    }
+
+    private static void validateLength(int expected, int actual) {
+        if(expected != actual && expected != -1) throw new IllegalArgumentException();
     }
 }
