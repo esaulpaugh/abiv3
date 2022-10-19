@@ -53,9 +53,9 @@ public final class V3 {
         String signature = createSignature(functionName, schema);
         byte[] ascii = signature.getBytes(StandardCharsets.US_ASCII);
         ascii[ascii.length - 1] = (byte) 0;
-        ByteBuffer selector = ByteBuffer.allocate(V3.SELECTOR_LEN);
         Keccak k = new Keccak(256);
         k.update(ascii);
+        ByteBuffer selector = ByteBuffer.allocate(V3.SELECTOR_LEN);
         k.digest(selector, V3.SELECTOR_LEN);
         return selector.array();
     }
@@ -73,6 +73,7 @@ public final class V3 {
     }
 
     private static Object[] serializeTuple(V3Type[] tupleType, Object[] tuple) {
+        if(tupleType.length != tuple.length) throw new IllegalArgumentException();
         final Object[] out = new Object[tupleType.length];
         for(int i = 0; i < out.length; i++) {
             out[i] = serialize(tupleType[i], tuple[i]);
@@ -162,11 +163,11 @@ public final class V3 {
         final V3Type et = type.elementType;
         switch (et.typeCode) {
         case V3Type.TYPE_CODE_BOOLEAN: return serializeBooleanArray(type, (boolean[]) arr);
-        case V3Type.TYPE_CODE_BYTE: return serializeByteArray(arr, type.isString);
+        case V3Type.TYPE_CODE_BYTE: return serializeByteArray(type, arr);
         case V3Type.TYPE_CODE_BIG_INTEGER:
         case V3Type.TYPE_CODE_BIG_DECIMAL:
         case V3Type.TYPE_CODE_ARRAY:
-        case V3Type.TYPE_CODE_TUPLE: return serializeObjectArray(et, (Object[]) arr);
+        case V3Type.TYPE_CODE_TUPLE: return serializeObjectArray(type, (Object[]) arr);
         default: throw new AssertionError();
         }
     }
@@ -247,18 +248,23 @@ public final class V3 {
         booleans[offset] = (b & mask) != 0;
     }
 
-    private static byte[] serializeByteArray(Object arr, boolean isString) {
-        return isString ? ((String) arr).getBytes(StandardCharsets.UTF_8) : (byte[]) arr;
+    private static byte[] serializeByteArray(V3Type type, Object arr) {
+        byte[] bytes = type.isString ? ((String) arr).getBytes(StandardCharsets.UTF_8) : (byte[]) arr;
+        if(type.arrayLen != -1 && bytes.length != type.arrayLen) {
+            throw new IllegalArgumentException();
+        }
+        return bytes;
     }
 
     private static Object deserializeByteArray(V3Type type, RLPItem item) {
         return type.isString ? new String(item.data(), StandardCharsets.UTF_8) : item.data();
     }
 
-    private static Object[] serializeObjectArray(V3Type elementType, Object[] objects) {
+    private static Object[] serializeObjectArray(V3Type type, Object[] objects) {
+        if(type.arrayLen != -1 && objects.length != type.arrayLen) throw new IllegalArgumentException();
         final Object[] out = new Object[objects.length];
         for (int i = 0; i < objects.length; i++) {
-            out[i] = serialize(elementType, objects[i]);
+            out[i] = serialize(type.elementType, objects[i]);
         }
         return out;
     }

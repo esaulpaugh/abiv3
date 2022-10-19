@@ -84,7 +84,7 @@ public final class Main {
 
         test(
                 new V3Type[] { ARR_2_OF_TUPLE_OF_STRING_BOOL_BOOL_UINT72, new V3Type("uint8", true, 8) },
-                new Object[] { new Object[] { "A", false, true, BigInteger.TEN } },
+                new Object[] { new Object[] { "A", false, true, BigInteger.TEN }, new Object[] { "B", true, false, BigInteger.ONE } },
                 BigInteger.valueOf(255L)
         );
 
