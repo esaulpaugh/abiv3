@@ -60,7 +60,7 @@ public final class V3 {
         return selector;
     }
 
-    private static String createSignature(String functionName, V3Type[] schema) {
+    public static String createSignature(String functionName, V3Type[] schema) {
         StringBuilder sb = new StringBuilder(functionName);
         sb.append('(');
         for (V3Type t : schema) {

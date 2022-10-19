@@ -51,6 +51,8 @@ public final class Main {
     static final V3Type TUPLE_OF_ADDRESS = new V3Type("(address)", new V3Type[] { V3Type.ADDRESS });
     static final V3Type TUPLE_OF_ADDRESS_ADDRESS = new V3Type("(address,address)", new V3Type[] { V3Type.ADDRESS, V3Type.ADDRESS });
 
+    static int caseNumber = 0;
+
     public static void main(String[] args) {
 
         testSingle(ARR_0_OF_BOOL, new boolean[] { });
@@ -115,7 +117,10 @@ public final class Main {
 
     private static void test(final V3Type[] schema, final Object... values) {
         final byte[] rlp = V3.toRLP("foo", schema, values);
-        System.out.println(new BigInteger(1, rlp).toString(16) + "\t\tLEN = " + rlp.length);
+        System.out.println("case" + caseNumber++ + ":\t\t"
+                + V3.createSignature("foo", schema) + " --> "
+                + new BigInteger(1, rlp).toString(16) + "\t\t"
+                + " (len " + rlp.length + ")");
         final Object[] decoded = V3.fromRLP("foo", schema, rlp);
         final boolean eq = Arrays.deepEquals(values, decoded);
         if(!eq) {
