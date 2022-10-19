@@ -13,9 +13,12 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 */
+import com.joemelsha.crypto.hash.Keccak;
+
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -33,13 +36,44 @@ public final class V3 {
 
     static final int SELECTOR_LEN = 4;
 
-    public static byte[] toRLP(byte[] selector, V3Type[] schema, Object[] vals) {
-        return RLPEncoder.sequenceWithPrefix(selector, serializeTuple(schema, vals));
+    public static byte[] toRLP(String functionName, V3Type[] schema, Object[] vals) {
+        return RLPEncoder.sequenceWithPrefix(
+                generateSelector(functionName, schema),
+                serializeTuple(schema, vals)
+        );
     }
 
-    public static Object[] fromRLP(byte[] expectedSelector, V3Type[] schema, byte[] rlp) {
-        checkSelector(expectedSelector, rlp);
+    public static Object[] fromRLP(String functionName, V3Type[] schema, byte[] rlp) {
+        checkSelector(generateSelector(functionName, schema), rlp);
         return deserializeTuple(schema, rlp, SELECTOR_LEN);
+    }
+
+    private static byte[] generateSelector(String functionName, V3Type[] schema) {
+        String signature = createSignature(functionName, schema);
+        byte[] ascii = signature.getBytes(StandardCharsets.US_ASCII);
+        byte[] selector = new byte[V3.SELECTOR_LEN];
+        ByteBuffer bb = ByteBuffer.wrap(selector);
+        Keccak k = new Keccak(256);
+        k.update(ascii);
+        k.update((byte) 0); // alternatively just append '\0' to the signature beforehand
+        k.digest(bb, V3.SELECTOR_LEN);
+        return selector;
+    }
+
+    private static String createSignature(String functionName, V3Type[] schema) {
+        StringBuilder sb = new StringBuilder(functionName);
+        sb.append('(');
+        for (V3Type t : schema) {
+            sb.append(t.canonicalType).append(',');
+        }
+        return completeTupleTypeString(sb);
+    }
+
+    private static String completeTupleTypeString(StringBuilder sb) {
+        final int len = sb.length();
+        return len != 1
+                ? sb.deleteCharAt(len - 1).append(')').toString() // replace trailing comma
+                : "()";
     }
 
     private static Object[] serializeTuple(V3Type[] tupleType, Object[] tuple) {

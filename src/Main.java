@@ -13,12 +13,8 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 */
-import com.joemelsha.crypto.hash.Keccak;
-
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 public final class Main {
@@ -118,36 +114,13 @@ public final class Main {
     }
 
     private static void test(final V3Type[] schema, final Object... values) {
-        final byte[] selector = genSelector(schema);
-        final byte[] rlp = V3.toRLP(selector, schema, values);
+        final byte[] rlp = V3.toRLP("foo", schema, values);
         System.out.println(new BigInteger(1, rlp).toString(16) + "\t\tLEN = " + rlp.length);
-        final Object[] decoded = V3.fromRLP(selector, schema, rlp);
+        final Object[] decoded = V3.fromRLP("foo", schema, rlp);
         final boolean eq = Arrays.deepEquals(values, decoded);
         if(!eq) {
             throw new AssertionError(values + " != " + decoded);
         }
 //        System.out.println(value + " == " + decoded[0]);
-    }
-
-    private static byte[] genSelector(V3Type[] types) {
-        StringBuilder sb = new StringBuilder("(");
-        for (V3Type t : types) {
-            sb.append(t.canonicalType).append(',');
-        }
-        String sig = completeTupleTypeString(sb) + '\0';
-        byte[] ascii = sig.getBytes(StandardCharsets.US_ASCII);
-        byte[] selector = new byte[V3.SELECTOR_LEN];
-        ByteBuffer bb = ByteBuffer.wrap(selector);
-        final Keccak k = new Keccak(256);
-        k.update(ascii);
-        k.digest(bb, V3.SELECTOR_LEN);
-        return selector;
-    }
-
-    private static String completeTupleTypeString(StringBuilder sb) {
-        final int len = sb.length();
-        return len != 1
-                ? sb.deleteCharAt(len - 1).append(')').toString() // replace trailing comma
-                : "()";
     }
 }
