@@ -55,8 +55,11 @@ public final class Main {
 
     public static void main(String[] args) {
 
+        testSingle(new V3Type("bool[12]", 12, V3Type.BOOL, boolean.class, false),
+                new boolean[] { false, false, false, false, false, true, true, true, true, true, true, true });
+
         testSingle(ARR_0_OF_BOOL, new boolean[] { });
-        testSingle(ARR_8_OF_BOOL, new boolean[] { true, true, true, true, true, true, true, true });
+        testSingle(ARR_8_OF_BOOL, new boolean[] { true, true, true, true, true, true, true, true }); // a99ebab181f0
 
         testSingle(DYN_ARR_OF_BOOL, new boolean[] { });
         testSingle(DYN_ARR_OF_BOOL, new boolean[] { false, false, true });
@@ -64,7 +67,8 @@ public final class Main {
         testSingle(UINT72, BigInteger.TEN);
         testSingle(DYN_ARR_OF_UINT72, new BigInteger[] { BigInteger.valueOf(2L), BigInteger.ZERO });
 
-        testSingle(V3Type.STRING, "Hi\0_76");
+        testSingle(V3Type.STRING, "abcd");
+        test(new V3Type[] { V3Type.STRING, V3Type.STRING }, "abcd", "efg");
         testSingle(DYN_ARR_OF_STRING, new String[] { "abcd", "efg" });
         testSingle(STRING_ARRAY_ARRAY, new String[][] { new String[] { "abcd", "efg" } });
         testSingle(V3Type.FUNCTION, new byte[] { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23 });

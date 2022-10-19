@@ -146,14 +146,16 @@ public final class RLPItem {
 
     static final class ABIv3Iterator implements Iterator<RLPItem> {
 
-        byte[] buffer;
+        final byte[] buffer;
         int index;
+        final int containerEnd;
 
         RLPItem next;
 
-        ABIv3Iterator(byte[] buffer, int index) {
+        ABIv3Iterator(byte[] buffer, int index, int containerEnd) {
             this.buffer = buffer;
             this.index = index;
+            this.containerEnd = containerEnd;
         }
 
         @Override
@@ -161,8 +163,8 @@ public final class RLPItem {
             if (next != null) {
                 return true;
             }
-            if (index < buffer.length) {
-                next = wrap(buffer, index, buffer.length);
+            if (index < containerEnd) {
+                next = wrap(buffer, index, containerEnd);
                 this.index = next.endIndex;
                 return true;
             }

@@ -37,7 +37,7 @@ public final class V3 {
     static final int SELECTOR_LEN = 4;
 
     public static byte[] toRLP(String functionName, V3Type[] schema, Object[] vals) {
-        Iterable<Object> tuple = Arrays.asList(serializeTuple(schema, vals));
+        List<Object> tuple = Arrays.asList(serializeTuple(schema, vals));
         ByteBuffer encoding = ByteBuffer.allocate(SELECTOR_LEN + RLPEncoder.sumEncodedLen(tuple));
         encoding.put(generateSelector(functionName, schema));
         RLPEncoder.putSequence(tuple, encoding);
@@ -46,7 +46,7 @@ public final class V3 {
 
     public static Object[] fromRLP(String functionName, V3Type[] schema, byte[] rlp) {
         checkSelector(generateSelector(functionName, schema), rlp);
-        return deserializeTuple(schema, rlp, SELECTOR_LEN);
+        return deserializeTuple(schema, new RLPItem.ABIv3Iterator(rlp, SELECTOR_LEN, rlp.length));
     }
 
     private static byte[] generateSelector(String functionName, V3Type[] schema) {
@@ -81,11 +81,10 @@ public final class V3 {
         return out;
     }
 
-    private static Object[] deserializeTuple(V3Type[] tupleType, byte[] buffer, final int idx) {
-        final Iterator<RLPItem> sequenceIterator = new RLPItem.ABIv3Iterator(buffer, idx);
+    private static Object[] deserializeTuple(V3Type[] tupleType, Iterator<RLPItem> sequenceIterator) {
         final Object[] elements = new Object[tupleType.length];
         for(int i = 0; i < elements.length; i++) {
-            elements[i] = deserialize(tupleType[i], sequenceIterator.next());
+            elements[i] = deserialize(tupleType[i], sequenceIterator);
         }
         if(sequenceIterator.hasNext()) {
             throw new IllegalArgumentException("trailing unconsumed items");
@@ -112,13 +111,15 @@ public final class V3 {
         }
     }
 
-    private static Object deserialize(V3Type type, RLPItem item) {
+    private static Object deserialize(V3Type type, Iterator<RLPItem> sequenceIterator) {
         switch (type.typeCode) {
-        case V3Type.TYPE_CODE_BOOLEAN: return deserializeBoolean(item);
-        case V3Type.TYPE_CODE_BIG_INTEGER: return deserializeBigInteger(type, item);
-        case V3Type.TYPE_CODE_BIG_DECIMAL: return new BigDecimal(deserializeBigInteger(type, item), type.scale);
-        case V3Type.TYPE_CODE_ARRAY: return deserializeArray(type, item);
-        case V3Type.TYPE_CODE_TUPLE: return deserializeTuple(type.elementTypes, item.data(), 0);
+        case V3Type.TYPE_CODE_BOOLEAN: return deserializeBoolean(sequenceIterator);
+        case V3Type.TYPE_CODE_BIG_INTEGER: return deserializeBigInteger(type, sequenceIterator);
+        case V3Type.TYPE_CODE_BIG_DECIMAL: return new BigDecimal(deserializeBigInteger(type, sequenceIterator), type.scale);
+        case V3Type.TYPE_CODE_ARRAY: return deserializeArray(type, sequenceIterator);
+        case V3Type.TYPE_CODE_TUPLE:
+            RLPItem list = sequenceIterator.next();
+            return deserializeTuple(type.elementTypes, new RLPItem.ABIv3Iterator(list.buffer, list.dataIndex, list.endIndex));
         default: throw new AssertionError();
         }
     }
@@ -127,8 +128,8 @@ public final class V3 {
         return val ? TRUE : FALSE;
     }
 
-    private static Boolean deserializeBoolean(RLPItem item) {
-        final String enc = item.asBigInt().toString(16);
+    private static Boolean deserializeBoolean(Iterator<RLPItem> sequenceIterator) {
+        final String enc = sequenceIterator.next().asBigInt().toString(16);
         if("1".equals(enc)) return Boolean.TRUE;
         if("0".equals(enc)) return Boolean.FALSE;
         throw new IllegalArgumentException("illegal boolean RLP: 0x" + enc + ". Expected 0x1 or 0x0");
@@ -153,7 +154,8 @@ public final class V3 {
         return extended;
     }
 
-    private static BigInteger deserializeBigInteger(V3Type ut, RLPItem item) {
+    private static BigInteger deserializeBigInteger(V3Type ut, Iterator<RLPItem> sequenceIterator) {
+        RLPItem item = sequenceIterator.next();
         return ut.unsigned || item.dataLength * Byte.SIZE < ut.bitLen
                 ? item.asBigInt()
                 : item.asBigIntSigned();
@@ -172,81 +174,62 @@ public final class V3 {
         }
     }
 
-    private static Object deserializeArray(V3Type type, RLPItem item) {
+    private static Object deserializeArray(V3Type type, Iterator<RLPItem> sequenceIterator) {
         final V3Type et = type.elementType;
         switch (et.typeCode) {
-        case V3Type.TYPE_CODE_BOOLEAN: return deserializeBooleanArray(type, item);
-        case V3Type.TYPE_CODE_BYTE: return deserializeByteArray(type, item);
+        case V3Type.TYPE_CODE_BOOLEAN: return deserializeBooleanArray(type, sequenceIterator);
+        case V3Type.TYPE_CODE_BYTE: return deserializeByteArray(type, sequenceIterator);
         case V3Type.TYPE_CODE_BIG_INTEGER:
         case V3Type.TYPE_CODE_BIG_DECIMAL:
         case V3Type.TYPE_CODE_ARRAY:
-        case V3Type.TYPE_CODE_TUPLE: return deserializeObjectArray(type, item);
+        case V3Type.TYPE_CODE_TUPLE: return deserializeObjectArray(type, sequenceIterator);
         default: throw new AssertionError();
+        }
+    }
+
+    static class BoolArrayHolder {
+        final byte[] arrayLen;
+        final byte[] bits;
+
+        BoolArrayHolder(byte[] arrayLen, byte[] bits) {
+            this.arrayLen = arrayLen;
+            this.bits = bits;
         }
     }
 
     private static Object serializeBooleanArray(V3Type type, boolean[] booleans) {
         validateLength(type.arrayLen, booleans.length);
-        final byte[] blob = new byte[Integers.roundLengthUp(booleans.length, Byte.SIZE) / Byte.SIZE];
-        int offset = 0;
-        final int fullBytes = booleans.length / Byte.SIZE;
-        for (int i = 0; i < fullBytes; i++, offset += Byte.SIZE) {
-            byte b = 0;
-            for (final int end = offset + Byte.SIZE; offset < end; offset++) {
-                b = writeBit(booleans, offset, b);
+        final byte[] bits;
+        if(booleans.length == 0) {
+            bits = Integers.toBytesUnsigned(BigInteger.ZERO);
+        } else {
+            StringBuilder sb = new StringBuilder();
+            for (boolean b : booleans) {
+                sb.append(b ? '1' : '0');
             }
-            blob[i] = b;
-        }
-        if(fullBytes != blob.length) {
-            byte b = 0;
-            while (offset < booleans.length) {
-                b = writeBit(booleans, offset++, b);
-            }
-            blob[fullBytes] = b;
+            bits = Integers.toBytesUnsigned(new BigInteger(sb.toString(), 2));
         }
         return type.arrayLen == -1
-                ? new Object[] { Integers.toBytes(booleans.length), blob }
-                : blob;
+                ? new BoolArrayHolder(Integers.toBytes(booleans.length), bits)
+                : bits;
     }
 
-    private static byte writeBit(boolean[] booleans, int offset, byte b) {
-        if (booleans[offset]) {
-            b |= 0b1000_0000 >>> (offset & 0x7);
-        }
-        return b;
+    public static boolean[] deserializeBooleanArray(V3Type type, Iterator<RLPItem> sequenceIterator) {
+        return type.arrayLen == -1
+            ? deserializeBooleanArray(sequenceIterator.next().asInt(), sequenceIterator.next().asBigInt())
+            : deserializeBooleanArray(type.arrayLen, sequenceIterator.next().asBigInt());
     }
 
-    public static boolean[] deserializeBooleanArray(V3Type type, RLPItem item) {
-        if(type.arrayLen == -1) {
-            final RLPItem lenItem = RLPItem.wrap(item.buffer, item.dataIndex, item.buffer.length);
-            final RLPItem blob = RLPItem.wrap(item.buffer, lenItem.endIndex, item.buffer.length);
-            return deserializeBooleanArray(lenItem.asInt(), blob.data());
-        }
-        return deserializeBooleanArray(type.arrayLen, item.data());
-    }
-
-    private static boolean[] deserializeBooleanArray(final int len, final byte[] blob) {
+    private static boolean[] deserializeBooleanArray(final int len, final BigInteger bigInt) {
         final boolean[] booleans = new boolean[len];
-        int offset = 0;
-        final int fullBytes = len / Byte.SIZE;
-        for (int i = 0, end = Byte.SIZE; i < fullBytes; i++, end += Byte.SIZE) {
-            final byte b = blob[i];
-            while (offset < end) {
-                readBit(b, offset++, booleans);
-            }
-        }
-        if(offset != len) {
-            final byte b = blob[fullBytes];
-            while (offset < len) {
-                readBit(b, offset++, booleans);
+        final String bigIntStr = bigInt.toString(2);
+        final int leadingZeroes = booleans.length - bigIntStr.length();
+        for (int i = leadingZeroes; i < booleans.length; i++) {
+            if(bigIntStr.charAt(i - leadingZeroes) == '1') {
+                booleans[i] = true;
             }
         }
         return booleans;
-    }
-
-    private static void readBit(byte b, int offset, boolean[] booleans) {
-        final int mask = 0b1000_0000 >>> (offset & 0x7);
-        booleans[offset] = (b & mask) != 0;
     }
 
     private static byte[] serializeByteArray(V3Type type, Object arr) {
@@ -255,8 +238,10 @@ public final class V3 {
         return bytes;
     }
 
-    private static Object deserializeByteArray(V3Type type, RLPItem item) {
-        return type.isString ? new String(item.data(), StandardCharsets.UTF_8) : item.data();
+    private static Object deserializeByteArray(V3Type type, Iterator<RLPItem> sequenceIterator) {
+        return type.isString
+                ? new String(sequenceIterator.next().data(), StandardCharsets.UTF_8)
+                : sequenceIterator.next().data();
     }
 
     private static Object[] serializeObjectArray(V3Type type, Object[] objects) {
@@ -268,11 +253,12 @@ public final class V3 {
         return out;
     }
 
-    private static Object[] deserializeObjectArray(V3Type type, RLPItem list) {
-        final List<RLPItem> elements = list.elements();
-        final Object[] in = (Object[]) Array.newInstance(type.elementClass, elements.size()); // reflection
+    private static Object[] deserializeObjectArray(V3Type type, Iterator<RLPItem> sequenceIterator) {
+        final RLPItem list = sequenceIterator.next();
+        final Iterator<RLPItem> listSeqIter = new RLPItem.ABIv3Iterator(list.buffer, list.dataIndex, list.endIndex);
+        final Object[] in = (Object[]) Array.newInstance(type.elementClass, list.elements().size()); // reflection
         for (int i = 0; i < in.length; i++) {
-            in[i] = deserialize(type.elementType, elements.get(i));
+            in[i] = deserialize(type.elementType, listSeqIter);
         }
         return in;
     }

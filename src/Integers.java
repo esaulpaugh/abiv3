@@ -94,6 +94,10 @@ public final class Integers {
         return len;
     }
 
+    public static int len(BigInteger val) {
+        return roundLengthUp(val.bitLength(), Byte.SIZE) / Byte.SIZE;
+    }
+
     /**
      * Returns an integer's minimal big-endian two's complement representation. The integer zero is represented by the
      * empty byte array.
@@ -104,6 +108,19 @@ public final class Integers {
     public static byte[] toBytes(int val) {
         byte[] bytes = new byte[len(val)];
         putInt(val, bytes, 0);
+        return bytes;
+    }
+
+    /**
+     * Returns an integer's minimal big-endian two's complement representation. The integer zero is represented by the
+     * empty byte array.
+     *
+     * @param val the integer
+     * @return the minimal representation
+     */
+    public static byte[] toBytesUnsigned(BigInteger val) {
+        byte[] bytes = new byte[len(val)];
+        putBigInt(val, bytes, 0);
         return bytes;
     }
 
@@ -132,6 +149,18 @@ public final class Integers {
             temp[--j] = (byte) val;
         }
         o.put(temp, j, Long.BYTES - j);
+    }
+
+    public static int putBigInt(BigInteger val, byte[] dest, int destIdx) {
+        byte[] bytes = val.toByteArray();
+        int srcPos = 0;
+        int len = bytes.length;
+        if(bytes[0] == 0x00) {
+            srcPos++;
+            len--;
+        }
+        System.arraycopy(bytes, srcPos, dest, destIdx, len);
+        return len;
     }
 
     /**
