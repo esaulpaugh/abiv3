@@ -52,29 +52,24 @@ public final class V3 {
     private static byte[] generateSelector(String functionName, V3Type[] schema) {
         String signature = createSignature(functionName, schema);
         byte[] ascii = signature.getBytes(StandardCharsets.US_ASCII);
-        byte[] selector = new byte[V3.SELECTOR_LEN];
-        ByteBuffer bb = ByteBuffer.wrap(selector);
+        ascii[ascii.length - 1] = (byte) 0;
+        ByteBuffer selector = ByteBuffer.allocate(V3.SELECTOR_LEN);
         Keccak k = new Keccak(256);
         k.update(ascii);
-        k.update((byte) 0); // alternatively just append '\0' to the signature beforehand
-        k.digest(bb, V3.SELECTOR_LEN);
-        return selector;
+        k.digest(selector, V3.SELECTOR_LEN);
+        return selector.array();
     }
 
     public static String createSignature(String functionName, V3Type[] schema) {
+        if(schema.length == 0) {
+            return functionName + "()";
+        }
         StringBuilder sb = new StringBuilder(functionName);
         sb.append('(');
         for (V3Type t : schema) {
             sb.append(t.canonicalType).append(',');
         }
-        return completeTupleTypeString(sb);
-    }
-
-    private static String completeTupleTypeString(StringBuilder sb) {
-        final int len = sb.length();
-        return len != 1
-                ? sb.deleteCharAt(len - 1).append(')').toString() // replace trailing comma
-                : "()";
+        return sb.deleteCharAt(sb.length() - 1).append(')').toString(); // replace trailing comma
     }
 
     private static Object[] serializeTuple(V3Type[] tupleType, Object[] tuple) {
