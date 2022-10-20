@@ -55,8 +55,8 @@ public final class V3 {
         String signature = createSignature(functionName, schema);
         byte[] signatureBytes = signature.getBytes(StandardCharsets.US_ASCII);
         signatureBytes[signatureBytes.length - 1] = (byte) 0; // zero the final ')' char to calculate v3 selector
-        Keccak k = new Keccak(256);
-        k.update(signatureBytes);
+        Keccak k = new Keccak(256); // TODO One in every 2^32 functions will hash the same in v2 and v3.
+        k.update(signatureBytes);   // TODO Compilers and tools should consider such functions syntactically invalid.
         ByteBuffer selector = ByteBuffer.allocate(V3.SELECTOR_LEN);
         k.digest(selector, V3.SELECTOR_LEN);
         return selector.array();
