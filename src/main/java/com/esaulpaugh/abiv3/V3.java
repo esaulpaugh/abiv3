@@ -48,7 +48,7 @@ public final class V3 {
 
     public static Object[] fromRLP(String functionName, V3Type[] schema, byte[] rlp) {
         checkSelector(generateSelector(functionName, schema), rlp);
-        return deserializeTuple(schema, new RLPItem.ABIv3Iterator(rlp, SELECTOR_LEN, rlp.length));
+        return deserializeTuple(schema, RLPItem.ABIv3Iterator.sequenceIterator(rlp, SELECTOR_LEN));
     }
 
     private static byte[] generateSelector(String functionName, V3Type[] schema) {
@@ -119,9 +119,7 @@ public final class V3 {
         case V3Type.TYPE_CODE_BIG_INTEGER: return deserializeBigInteger(type, sequenceIterator);
         case V3Type.TYPE_CODE_BIG_DECIMAL: return new BigDecimal(deserializeBigInteger(type, sequenceIterator), type.scale);
         case V3Type.TYPE_CODE_ARRAY: return deserializeArray(type, sequenceIterator);
-        case V3Type.TYPE_CODE_TUPLE:
-            RLPItem list = sequenceIterator.next();
-            return deserializeTuple(type.elementTypes, new RLPItem.ABIv3Iterator(list.buffer, list.dataIndex, list.endIndex));
+        case V3Type.TYPE_CODE_TUPLE: return deserializeTuple(type.elementTypes, sequenceIterator.next().iterator());
         default: throw new AssertionError();
         }
     }
@@ -257,9 +255,9 @@ public final class V3 {
     }
 
     private static Object[] deserializeObjectArray(V3Type type, Iterator<RLPItem> sequenceIterator) {
-        final RLPItem list = sequenceIterator.next();
-        final Iterator<RLPItem> listSeqIter = new RLPItem.ABIv3Iterator(list.buffer, list.dataIndex, list.endIndex);
-        final Object[] in = (Object[]) Array.newInstance(type.elementClass, list.elements().size()); // reflection
+        final List<RLPItem> elements = sequenceIterator.next().elements();
+        final Iterator<RLPItem> listSeqIter = elements.iterator();
+        final Object[] in = (Object[]) Array.newInstance(type.elementClass, elements.size()); // reflection
         for (int i = 0; i < in.length; i++) {
             in[i] = deserialize(type.elementType, listSeqIter);
         }

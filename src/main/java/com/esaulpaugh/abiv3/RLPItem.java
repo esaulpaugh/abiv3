@@ -29,7 +29,7 @@ import java.util.NoSuchElementException;
  *
  * Created by Evo on 1/19/2017.
  */
-public final class RLPItem {
+public final class RLPItem implements Iterable<RLPItem> {
 
     final byte[] buffer;
     public final int index;
@@ -146,6 +146,11 @@ public final class RLPItem {
         return new BigInteger(1, rlp).toString(16);
     }
 
+    @Override
+    public Iterator<RLPItem> iterator() {
+        return new ABIv3Iterator(buffer, dataIndex, endIndex);
+    }
+
     static final class ABIv3Iterator implements Iterator<RLPItem> {
 
         final byte[] buffer;
@@ -154,7 +159,7 @@ public final class RLPItem {
 
         RLPItem next;
 
-        ABIv3Iterator(byte[] buffer, int index, int containerEnd) {
+        private ABIv3Iterator(byte[] buffer, int index, int containerEnd) {
             this.buffer = buffer;
             this.index = index;
             this.containerEnd = containerEnd;
@@ -182,6 +187,10 @@ public final class RLPItem {
                 return item;
             }
             throw new NoSuchElementException();
+        }
+
+        static ABIv3Iterator sequenceIterator(byte[] buffer, int index) {
+            return new ABIv3Iterator(buffer, index, buffer.length);
         }
     }
 }
