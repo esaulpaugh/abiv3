@@ -223,12 +223,13 @@ public final class V3 {
     }
 
     private static boolean[] deserializeBooleanArray(final int len, final BigInteger bigInt) {
+        final String binaryStr = bigInt.toString(2);
+        final int numChars = binaryStr.length();
+        final int impliedZeros = len - numChars;
         final boolean[] booleans = new boolean[len];
-        final String bigIntStr = bigInt.toString(2);
-        final int leadingZeroes = booleans.length - bigIntStr.length();
-        for (int i = leadingZeroes; i < booleans.length; i++) {
-            if(bigIntStr.charAt(i - leadingZeroes) == '1') {
-                booleans[i] = true;
+        for (int c = 0; c < numChars; c++) {
+            if(binaryStr.charAt(c) == '1') {
+                booleans[impliedZeros + c] = true;
             }
         }
         return booleans;
