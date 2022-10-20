@@ -18,11 +18,11 @@ package com.esaulpaugh.abiv3;
 public final class V3Type {
 
     public static final int TYPE_CODE_BOOLEAN = 0;
-    public static final int TYPE_CODE_BYTE = 1;
-    public static final int TYPE_CODE_BIG_INTEGER = 2;
-    public static final int TYPE_CODE_BIG_DECIMAL = 3;
-    public static final int TYPE_CODE_ARRAY = 4;
-    public static final int TYPE_CODE_TUPLE = 5;
+    public static final int TYPE_CODE_BIG_INTEGER = 1;
+    public static final int TYPE_CODE_BIG_DECIMAL = 2;
+    public static final int TYPE_CODE_ARRAY = 3;
+    public static final int TYPE_CODE_TUPLE = 4;
+    public static final int TYPE_CODE_BYTE = 9;
 
     final int typeCode;
 

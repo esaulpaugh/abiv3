@@ -74,6 +74,14 @@ public final class V3 {
         return sb.deleteCharAt(sb.length() - 1).append(')').toString(); // replace trailing comma
     }
 
+    private static void checkSelector(byte[] expectedSelector, byte[] rlp) {
+        for (int i = 0; i < expectedSelector.length; i++) {
+            if(rlp[i] != expectedSelector[i]) {
+                throw new IllegalArgumentException("bad selector");
+            }
+        }
+    }
+
     private static Object[] serializeTuple(V3Type[] tupleType, Object[] tuple) {
         validateLength(tupleType.length, tuple.length);
         final Object[] out = new Object[tupleType.length];
@@ -92,14 +100,6 @@ public final class V3 {
             throw new IllegalArgumentException("trailing unconsumed items");
         }
         return elements;
-    }
-
-    private static void checkSelector(byte[] expectedSelector, byte[] rlp) {
-        for (int i = 0; i < expectedSelector.length; i++) {
-            if(rlp[i] != expectedSelector[i]) {
-                throw new IllegalArgumentException("bad selector");
-            }
-        }
     }
 
     private static Object serialize(V3Type type, Object obj) {
