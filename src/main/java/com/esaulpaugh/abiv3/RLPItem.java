@@ -47,7 +47,7 @@ public final class RLPItem implements Iterable<RLPItem> {
     }
 
     public List<RLPItem> elements() {
-        ArrayList<RLPItem> arrayList = new ArrayList<>();
+        List<RLPItem> arrayList = new ArrayList<>();
         RLPItem next = nextElement(dataIndex);
         while (next != null) {
             arrayList.add(next);
@@ -102,7 +102,7 @@ public final class RLPItem implements Iterable<RLPItem> {
 
     private static RLPItem newStringShort(byte[] buffer, int index, byte lead, int containerEnd) {
         final int dataIndex = index + 1;
-        final int dataLength = lead - DataType.STRING_SHORT_OFFSET;
+        final int dataLength = lead - DataType.STRING_SHORT.offset;
         final int endIndex = requireInBounds((long) dataIndex + dataLength, containerEnd, index);
         if (dataLength == 1 && DataType.type(buffer[dataIndex]) == DataType.SINGLE_BYTE) {
             throw new IllegalArgumentException("invalid rlp for single byte @ " + index);
@@ -112,7 +112,7 @@ public final class RLPItem implements Iterable<RLPItem> {
 
     private static RLPItem newListShort(byte[] buffer, int index, byte lead, int containerEnd) {
         final int dataIndex = index + 1;
-        final int dataLength = lead - DataType.LIST_SHORT_OFFSET;
+        final int dataLength = lead - DataType.LIST_SHORT.offset;
         final int endIndex = requireInBounds((long) dataIndex + dataLength, containerEnd, index);
         return new RLPItem(buffer, index, dataIndex, dataLength, endIndex);
     }

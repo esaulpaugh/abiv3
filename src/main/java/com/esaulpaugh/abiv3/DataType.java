@@ -18,25 +18,18 @@ package com.esaulpaugh.abiv3;
 /** Enumeration of the five RLP data types. */
 public enum DataType {
 
-    SINGLE_BYTE(0, true),
-    STRING_SHORT(0x80, true),
-    STRING_LONG(0xb7, true),
-    LIST_SHORT(0xc0, false),
-    LIST_LONG(0xf7, false);
-
-    static final byte STRING_SHORT_OFFSET = (byte) 0x80;
-    static final byte STRING_LONG_OFFSET = (byte) 0xb7;
-    static final byte LIST_SHORT_OFFSET = (byte) 0xc0;
-    static final byte LIST_LONG_OFFSET = (byte) 0xf7;
+    SINGLE_BYTE(0),
+    STRING_SHORT(0x80),
+    STRING_LONG(0xb7),
+    LIST_SHORT(0xc0),
+    LIST_LONG(0xf7);
 
     public static final int MIN_LONG_DATA_LEN = 56;
 
     public final byte offset;
-    public final boolean isString;
 
-    DataType(int offset, boolean isString) {
+    DataType(int offset) {
         this.offset = (byte) offset;
-        this.isString = isString;
     }
 
     /**

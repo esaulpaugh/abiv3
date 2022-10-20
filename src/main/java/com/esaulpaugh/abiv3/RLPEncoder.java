@@ -100,9 +100,9 @@ public final class RLPEncoder {
                 encodeLen1String(byteString[0], dest);
                 return;
             }
-            dest.put((byte) (DataType.STRING_SHORT_OFFSET + dataLen)); // dataLen is 0 or 2-55
+            dest.put((byte) (DataType.STRING_SHORT.offset + dataLen)); // dataLen is 0 or 2-55
         } else { // long string
-            dest.put((byte) (DataType.STRING_LONG_OFFSET + Integers.len(dataLen)));
+            dest.put((byte) (DataType.STRING_LONG.offset + Integers.len(dataLen)));
             Integers.putLong(dataLen, dest);
         }
         dest.put(byteString);
@@ -110,7 +110,7 @@ public final class RLPEncoder {
 
     private static void encodeLen1String(byte first, ByteBuffer bb) {
         if (first < 0x00) { // same as (first & 0xFF) >= 0x80
-            bb.put((byte) (DataType.STRING_SHORT_OFFSET + 1));
+            bb.put((byte) (DataType.STRING_SHORT.offset + 1));
         }
         bb.put(first);
     }
@@ -122,9 +122,9 @@ public final class RLPEncoder {
 
     static void insertListPrefix(int dataLen, ByteBuffer bb) {
         if(dataLen < DataType.MIN_LONG_DATA_LEN) {
-            bb.put((byte) (DataType.LIST_SHORT_OFFSET + dataLen));
+            bb.put((byte) (DataType.LIST_SHORT.offset + dataLen));
         } else {
-            bb.put((byte) (DataType.LIST_LONG_OFFSET + Integers.len(dataLen)));
+            bb.put((byte) (DataType.LIST_LONG.offset + Integers.len(dataLen)));
             Integers.putLong(dataLen, bb);
         }
     }
