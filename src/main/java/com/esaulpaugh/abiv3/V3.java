@@ -143,8 +143,8 @@ public final class V3 {
             return val.signum() < 0
                     ? signExtendNegative(bytes, ut.bitLen / Byte.SIZE)
                     : bytes[0] != 0
-                    ? bytes
-                    : Arrays.copyOfRange(bytes, 1, bytes.length);
+                        ? bytes
+                        : Arrays.copyOfRange(bytes, 1, bytes.length);
         }
         return new byte[0];
     }
@@ -201,19 +201,19 @@ public final class V3 {
 
     private static Object serializeBooleanArray(V3Type type, boolean[] booleans) {
         validateLength(type.arrayLen, booleans.length);
-        final byte[] bits;
+        final byte[] bytes;
         if(booleans.length == 0) {
-            bits = Integers.toBytesUnsigned(BigInteger.ZERO);
+            bytes = new byte[0];
         } else {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder binary = new StringBuilder("+");
             for (boolean b : booleans) {
-                sb.append(b ? '1' : '0');
+                binary.append(b ? '1' : '0');
             }
-            bits = Integers.toBytesUnsigned(new BigInteger(sb.toString(), 2));
+            bytes = serializeBigInteger(type, new BigInteger(binary.toString(), 2));
         }
         return type.arrayLen == -1
-                ? new BoolArrayHolder(Integers.toBytes(booleans.length), bits)
-                : bits;
+                ? new BoolArrayHolder(Integers.toBytes(booleans.length), bytes)
+                : bytes;
     }
 
     public static boolean[] deserializeBooleanArray(V3Type type, Iterator<RLPItem> sequenceIterator) {
