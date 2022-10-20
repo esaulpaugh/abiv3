@@ -34,6 +34,7 @@ public final class Integers {
      * @see #putInt(int, byte[], int)
      */
     public static int getInt(final byte[] buffer, int offset, final int len) {
+        if(len == 0) return 0;
         if (len < 0 || len > Integer.BYTES || buffer[offset] == 0) {
             throw new IllegalArgumentException();
         }
@@ -56,6 +57,7 @@ public final class Integers {
      * @throws IllegalArgumentException if the integer's representation is found to have leading zeroes
      */
     public static long getLong(final byte[] buffer, final int offset, final int len) {
+        if(len == 0) return 0L;
         if (len < 0 || len > Long.BYTES || buffer[offset] == 0) {
             throw new IllegalArgumentException();
         }
