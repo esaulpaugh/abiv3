@@ -61,7 +61,7 @@ public final class Main {
                 new boolean[] { false, false, false, false, false, true, true, true, true, true, true, true });
 
         testSingle(ARR_0_OF_BOOL, new boolean[] { });
-        testSingle(ARR_8_OF_BOOL, new boolean[] { true, true, true, true, true, true, true, true }); // a99ebab181f0
+        testSingle(ARR_8_OF_BOOL, new boolean[] { true, true, true, true, true, true, true, true });
 
         testSingle(DYN_ARR_OF_BOOL, new boolean[] { });
         testSingle(DYN_ARR_OF_BOOL, new boolean[] { false, false, true });

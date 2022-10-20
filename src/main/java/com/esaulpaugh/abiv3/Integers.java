@@ -135,17 +135,4 @@ public final class Integers {
         }
         o.put(temp, j, Long.BYTES - j);
     }
-
-    /**
-     * Rounds a length up to the nearest multiple of {@code powerOfTwo}. If {@code len} is already a multiple, method has
-     * no effect.
-     *
-     * @param len the length, a non-negative integer
-     * @param powerOfTwo a power of two of which the result will be a multiple
-     * @return the rounded-up value
-     */
-    public static int roundLengthUp(int len, int powerOfTwo) {
-        final int mod = len & (powerOfTwo - 1);
-        return mod != 0 ? len + (powerOfTwo - mod) : len;
-    }
 }
