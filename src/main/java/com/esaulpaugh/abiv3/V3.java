@@ -53,10 +53,10 @@ public final class V3 {
 
     private static byte[] generateSelector(String functionName, V3Type[] schema) {
         String signature = createSignature(functionName, schema);
-        byte[] ascii = signature.getBytes(StandardCharsets.US_ASCII);
-        ascii[ascii.length - 1] = (byte) 0;
+        byte[] signatureBytes = signature.getBytes(StandardCharsets.US_ASCII);
+        signatureBytes[signatureBytes.length - 1] = (byte) 0; // zero the final ')' char to calculate v3 selector
         Keccak k = new Keccak(256);
-        k.update(ascii);
+        k.update(signatureBytes);
         ByteBuffer selector = ByteBuffer.allocate(V3.SELECTOR_LEN);
         k.digest(selector, V3.SELECTOR_LEN);
         return selector.array();
