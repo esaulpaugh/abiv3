@@ -40,9 +40,9 @@ public final class RLPEncoder {
         if(raw instanceof Object[]) {
             return listEncodedLen(Arrays.asList((Object[]) raw));
         }
-        if(raw instanceof V3.BoolArrayHolder) {
-            V3.BoolArrayHolder holder = (V3.BoolArrayHolder) raw;
-            return stringEncodedLen(holder.arrayLen) + stringEncodedLen(holder.bits);
+        if(raw instanceof V3.DynamicBoolArray) {
+            V3.DynamicBoolArray dyn = (V3.DynamicBoolArray) raw;
+            return stringEncodedLen(dyn.arrayLenBytes) + stringEncodedLen(dyn.dataBytes);
         }
         throw new IllegalArgumentException();
     }
@@ -70,10 +70,10 @@ public final class RLPEncoder {
         } else if(raw instanceof Object[]) {
             Iterable<?> elements = Arrays.asList((Object[]) raw);
             encodeList(sumEncodedLen(elements), elements, bb);
-        } else if(raw instanceof V3.BoolArrayHolder) {
-            V3.BoolArrayHolder holder = (V3.BoolArrayHolder) raw;
-            putString(holder.arrayLen, bb);
-            putString(holder.bits, bb);
+        } else if(raw instanceof V3.DynamicBoolArray) {
+            V3.DynamicBoolArray holder = (V3.DynamicBoolArray) raw;
+            putString(holder.arrayLenBytes, bb);
+            putString(holder.dataBytes, bb);
         } else {
             throw new IllegalArgumentException();
         }

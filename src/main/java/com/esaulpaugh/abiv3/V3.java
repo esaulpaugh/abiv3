@@ -189,13 +189,13 @@ public final class V3 {
         }
     }
 
-    static class BoolArrayHolder {
-        final byte[] arrayLen;
-        final byte[] bits;
+    static class DynamicBoolArray {
+        final byte[] arrayLenBytes;
+        final byte[] dataBytes;
 
-        BoolArrayHolder(byte[] arrayLen, byte[] bits) {
-            this.arrayLen = arrayLen;
-            this.bits = bits;
+        DynamicBoolArray(byte[] arrayLenBytes, byte[] dataBytes) {
+            this.arrayLenBytes = arrayLenBytes;
+            this.dataBytes = dataBytes;
         }
     }
 
@@ -212,7 +212,7 @@ public final class V3 {
             bytes = serializeBigInteger(type, new BigInteger(binary.toString(), 2));
         }
         return type.arrayLen == -1
-                ? new BoolArrayHolder(Integers.toBytes(booleans.length), bytes)
+                ? new DynamicBoolArray(Integers.toBytes(booleans.length), bytes)
                 : bytes;
     }
 
