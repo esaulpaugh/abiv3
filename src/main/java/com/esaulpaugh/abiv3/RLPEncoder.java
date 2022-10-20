@@ -42,7 +42,13 @@ public final class RLPEncoder {
         }
         if(raw instanceof V3.DynamicBoolArray) {
             V3.DynamicBoolArray dyn = (V3.DynamicBoolArray) raw;
-            return stringEncodedLen(dyn.arrayLenBytes) + stringEncodedLen(dyn.dataBytes);
+            final int lengthOfLength = stringEncodedLen(dyn.arrayLenBytes);
+            if(dyn.dataBytes == null)
+                return lengthOfLength;
+            return lengthOfLength + stringEncodedLen(dyn.dataBytes);
+        }
+        if(raw == null) {
+            return 0;
         }
         throw new IllegalArgumentException();
     }
@@ -73,7 +79,9 @@ public final class RLPEncoder {
         } else if(raw instanceof V3.DynamicBoolArray) {
             V3.DynamicBoolArray holder = (V3.DynamicBoolArray) raw;
             putString(holder.arrayLenBytes, bb);
-            putString(holder.dataBytes, bb);
+            if(holder.dataBytes != null) putString(holder.dataBytes, bb);
+        } else if(raw == null) {
+            // skip
         } else {
             throw new IllegalArgumentException();
         }

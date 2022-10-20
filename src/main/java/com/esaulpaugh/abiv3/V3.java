@@ -201,7 +201,7 @@ public final class V3 {
         validateLength(type.arrayLen, booleans.length);
         final byte[] bytes;
         if(booleans.length == 0) {
-            bytes = new byte[0];
+            bytes = null;
         } else {
             StringBuilder binary = new StringBuilder("+");
             for (boolean b : booleans) {
@@ -210,18 +210,14 @@ public final class V3 {
             bytes = serializeBigInteger(type, new BigInteger(binary.toString(), 2));
         }
         return type.arrayLen == -1
-                ? new DynamicBoolArray(Integers.toBytes(booleans.length), bytes)
-                : bytes;
+                    ? new DynamicBoolArray(Integers.toBytes(booleans.length), bytes)
+                    : bytes;
     }
 
-    public static boolean[] deserializeBooleanArray(V3Type type, Iterator<RLPItem> sequenceIterator) {
-        return type.arrayLen == -1
-            ? deserializeBooleanArray(sequenceIterator.next().asInt(), sequenceIterator.next().asBigInt())
-            : deserializeBooleanArray(type.arrayLen, sequenceIterator.next().asBigInt());
-    }
-
-    private static boolean[] deserializeBooleanArray(final int len, final BigInteger bigInt) {
-        final String binaryStr = bigInt.toString(2);
+    private static boolean[] deserializeBooleanArray(final V3Type type, final Iterator<RLPItem> sequenceIterator) {
+        final int len = type.arrayLen == -1 ? sequenceIterator.next().asInt() : type.arrayLen;
+        if(len == 0) return new boolean[0];
+        final String binaryStr = sequenceIterator.next().asBigInt().toString(2);
         final int numChars = binaryStr.length();
         final int impliedZeros = len - numChars;
         final boolean[] booleans = new boolean[len];
