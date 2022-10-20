@@ -57,6 +57,8 @@ public final class Main {
 
     public static void main(String[] args) {
 
+        System.out.println("#\t\t\tSelector\tSignature\t\t\tCalldata example");
+
         testSingle(new V3Type("bool[12]", 12, V3Type.BOOL, boolean.class, false),
                 new boolean[] { false, false, false, false, false, true, true, true, true, true, true, true });
 
