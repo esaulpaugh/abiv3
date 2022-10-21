@@ -18,6 +18,7 @@ package com.esaulpaugh.abiv3;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.Random;
 
 public final class Main {
 
@@ -57,7 +58,7 @@ public final class Main {
 
     public static void main(String[] args) {
 
-        System.out.println("#\t\t\tSelector\tSignature\t\t\tCalldata example");
+        System.out.println("#\t\t\tfn#\t\tSignature\t\tCalldata example");
 
         testSingle(new V3Type("bool[12]", 12, V3Type.BOOL, boolean.class, false),
                 new boolean[] { false, false, false, false, false, true, true, true, true, true, true, true });
@@ -124,13 +125,21 @@ public final class Main {
     }
 
     private static void test(final V3Type[] schema, final Object... values) {
-        final byte[] rlp = V3.toRLP("foo", schema, values);
+        test(new Random().nextInt(260), schema, values);
+    }
+
+    private static void test(final int fnNumber, final V3Type[] schema, final Object... values) {
+        final byte[] rlp = V3.toRLP(fnNumber, schema, values);
+        String calldata = new BigInteger(1, rlp).toString(16);
+        if(calldata.length() % 2 == 1) {
+            calldata = "0" + calldata;
+        }
         System.out.println("case" + caseNumber++ + ":\t\t"
-                + new BigInteger(1, Arrays.copyOfRange(rlp, 0, 4)).toString(16) + "\t"
+                + fnNumber + "\t\t"
                 + V3.createSignature("foo", schema) + " --> "
-                + new BigInteger(1, rlp).toString(16) + "\t\t"
+                + calldata + "\t\t"
                 + " (len " + rlp.length + ")");
-        final Object[] decoded = V3.fromRLP("foo", schema, rlp);
+        final Object[] decoded = V3.fromRLP(schema, rlp);
         final boolean eq = Arrays.deepEquals(values, decoded);
         if(!eq) {
             throw new AssertionError(values + " != " + decoded);

@@ -35,28 +35,51 @@ public final class V3 {
     private static final byte[] TRUE = new byte[] { 0x1 };
     private static final byte[] FALSE = new byte[0];
 
-    static final int VERSION_ID = 0;
+    static final byte VERSION_ID = 0;
 
 //    private static final byte[] PREFIX = new byte[] { (byte) 0xca, (byte) 0xfe, (byte) 0xde, (byte) 0xf1 };
 
     static final int SELECTOR_LEN = 4;
 
-    public static byte[] toRLP(String functionName, V3Type[] schema, Object[] vals) {
+    public static byte[] toRLP(int functionNumber, V3Type[] schema, Object[] vals) {
         List<Object> tuple = new ArrayList<>();
-        tuple.add(Integers.toBytes(VERSION_ID));
-        tuple.add(generateSelector(functionName, schema));
+        byte[][] header = header(functionNumber);
+        if(header.length == 2) {
+            tuple.add(header[1]);
+        }
         tuple.addAll(Arrays.asList(serializeTuple(schema, vals)));
-        ByteBuffer encoding = ByteBuffer.allocate(RLPEncoder.sumEncodedLen(tuple));
+        ByteBuffer encoding = ByteBuffer.allocate(1 + RLPEncoder.sumEncodedLen(tuple));
+        encoding.put(header[0]);
         RLPEncoder.putSequence(tuple, encoding);
         return encoding.array();
     }
 
-    public static Object[] fromRLP(String functionName, V3Type[] schema, byte[] rlp) {
-        RLPItem version = RLPItem.wrap(rlp, 0, rlp.length);
-        if(version.asInt() != VERSION_ID) throw new IllegalArgumentException();
-        RLPItem selector = RLPItem.wrap(rlp, version.endIndex, rlp.length);
-        checkSelector(generateSelector(functionName, schema), selector.data());
-        return deserializeTuple(schema, RLPItem.ABIv3Iterator.sequenceIterator(rlp, selector.endIndex));
+    public static Object[] fromRLP(V3Type[] schema, byte[] rlp) {
+        byte zeroth = rlp[0];
+        int version = zeroth & 0b1110_0000;
+        if(version != VERSION_ID) {
+            throw new IllegalArgumentException();
+        }
+        int fnNumber = zeroth & 0b0001_1111;
+        if(fnNumber == 31) {
+            RLPItem fnNumberItem = RLPItem.wrap(rlp, 1, rlp.length);
+            fnNumber = fnNumberItem.asInt();
+            if(fnNumber < 31) throw new IllegalArgumentException();
+            return deserializeTuple(schema, RLPItem.ABIv3Iterator.sequenceIterator(rlp, fnNumberItem.endIndex));
+        } else {
+            return deserializeTuple(schema, RLPItem.ABIv3Iterator.sequenceIterator(rlp, 1));
+        }
+    }
+
+    private static byte[][] header(int functionNumber) {
+        final byte[] fnNumber = Integers.toBytes(functionNumber);
+        if(functionNumber < 31) {
+            if(functionNumber == 0) {
+                return new byte[][] { new byte[] { 0 } };
+            }
+            return new byte[][] { fnNumber };
+        }
+        return new byte[][] { new byte[] { 0b0001_1111 }, fnNumber };
     }
 
     private static byte[] generateSelector(String functionName, V3Type[] schema) {
