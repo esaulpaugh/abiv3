@@ -84,17 +84,21 @@ public final class RLPItem implements Iterable<RLPItem> {
 
     public static RLPItem wrap(byte[] buffer, int index, int containerEnd) {
         final byte lead = buffer[index];
-        if(lead == V3.VERSION_IDENTIFIER && containerEnd == index + 1) {
-            return null;
-        }
-        final DataType type = DataType.type(lead);
-        switch (type) {
-        case SINGLE_BYTE: return newSingleByte(buffer, index, containerEnd);
-        case STRING_SHORT: return newStringShort(buffer, index, lead, containerEnd);
-        case LIST_SHORT: return newListShort(buffer, index, lead, containerEnd);
-        case STRING_LONG:
-        case LIST_LONG: return newLongItem(lead, type, buffer, index, containerEnd);
-        default: throw new AssertionError();
+        try {
+            final DataType type = DataType.type(lead);
+            switch (type) {
+            case SINGLE_BYTE: return newSingleByte(buffer, index, containerEnd);
+            case STRING_SHORT: return newStringShort(buffer, index, lead, containerEnd);
+            case LIST_SHORT: return newListShort(buffer, index, lead, containerEnd);
+            case STRING_LONG:
+            case LIST_LONG: return newLongItem(lead, type, buffer, index, containerEnd);
+            default: throw new AssertionError();
+            }
+        } catch (IllegalArgumentException iae) {
+            if(Arrays.equals(Arrays.copyOfRange(buffer, index, buffer.length), V3.VERSION_SUFFIX)) {
+                return null;
+            }
+            throw iae;
         }
     }
 

@@ -34,7 +34,14 @@ public final class V3 {
     private static final byte[] TRUE = new byte[] { 0x1 };
     private static final byte[] FALSE = new byte[0];
 
-    public static final byte VERSION_IDENTIFIER = (byte) 0x81;
+    static final byte[] VERSION_SUFFIX = { (byte) 0x81 }; // Presence of version byte doesn't help us distinguish between v2 and v3,
+                                                          // so it should probably be off by default in v3. Version suffix could easily
+                                                          // be made mandatory in an ABIv3.1, v4, or later. Version suffix can be an
+                                                          // arbitrarily large number of bytes (e.g. 0xffabcd...).
+                                                          // A future version which changes the selector length could make the version
+                                                          // byte(s) mandatory to assist differentiating between (post-v2) versions.
+                                                          // But even then, it may not be strictly necessary if compilers ban rare
+                                                          // function signatures that produce certain types of partial hash collisions.
 
 //    private static final byte[] PREFIX = new byte[] { (byte) 0xca, (byte) 0xfe, (byte) 0xde, (byte) 0xf1 };
 
@@ -46,7 +53,7 @@ public final class V3 {
         encoding.put(generateSelector(functionName, schema));
         RLPEncoder.putSequence(tuple, encoding);
         if(withVersionId) {
-            encoding.put(VERSION_IDENTIFIER); // optional version byte on the end
+            encoding.put(VERSION_SUFFIX); // optional version bytes on the end
         }
         return encoding.array();
     }
