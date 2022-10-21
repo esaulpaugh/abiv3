@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -34,33 +35,28 @@ public final class V3 {
     private static final byte[] TRUE = new byte[] { 0x1 };
     private static final byte[] FALSE = new byte[0];
 
-    static final byte[] VERSION_SUFFIX = { (byte) 0x81 }; // Presence of version byte doesn't help us distinguish between v2 and v3,
-                                                          // so it should probably be off by default in v3. Version suffix could easily
-                                                          // be made mandatory in an ABIv3.1, v4, or later. Version suffix can be an
-                                                          // arbitrarily large number of bytes (e.g. 0xffabcd...).
-                                                          // A future version which changes the selector length could make the version
-                                                          // byte(s) mandatory to assist differentiating between (post-v2) versions.
-                                                          // But even then, it may not be strictly necessary if compilers ban rare
-                                                          // function signatures that produce certain types of partial hash collisions.
+    static final int VERSION_ID = 0;
 
 //    private static final byte[] PREFIX = new byte[] { (byte) 0xca, (byte) 0xfe, (byte) 0xde, (byte) 0xf1 };
 
     static final int SELECTOR_LEN = 4;
 
-    public static byte[] toRLP(String functionName, V3Type[] schema, Object[] vals, boolean withSuffix) {
-        List<Object> tuple = Arrays.asList(serializeTuple(schema, vals));
-        ByteBuffer encoding = ByteBuffer.allocate(SELECTOR_LEN + RLPEncoder.sumEncodedLen(tuple) + (withSuffix ? VERSION_SUFFIX.length : 0));
-        encoding.put(generateSelector(functionName, schema));
+    public static byte[] toRLP(String functionName, V3Type[] schema, Object[] vals) {
+        List<Object> tuple = new ArrayList<>();
+        tuple.add(Integers.toBytes(VERSION_ID));
+        tuple.add(generateSelector(functionName, schema));
+        tuple.addAll(Arrays.asList(serializeTuple(schema, vals)));
+        ByteBuffer encoding = ByteBuffer.allocate(RLPEncoder.sumEncodedLen(tuple));
         RLPEncoder.putSequence(tuple, encoding);
-        if(withSuffix) {
-            encoding.put(VERSION_SUFFIX); // optional version bytes on the end
-        }
         return encoding.array();
     }
 
     public static Object[] fromRLP(String functionName, V3Type[] schema, byte[] rlp) {
-        checkSelector(generateSelector(functionName, schema), rlp);
-        return deserializeTuple(schema, RLPItem.ABIv3Iterator.sequenceIterator(rlp, SELECTOR_LEN));
+        RLPItem version = RLPItem.wrap(rlp, 0, rlp.length);
+        if(version.asInt() != VERSION_ID) throw new IllegalArgumentException();
+        RLPItem selector = RLPItem.wrap(rlp, version.endIndex, rlp.length);
+        checkSelector(generateSelector(functionName, schema), selector.data());
+        return deserializeTuple(schema, RLPItem.ABIv3Iterator.sequenceIterator(rlp, selector.endIndex));
     }
 
     private static byte[] generateSelector(String functionName, V3Type[] schema) {
