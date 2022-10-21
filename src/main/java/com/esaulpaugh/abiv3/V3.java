@@ -47,12 +47,12 @@ public final class V3 {
 
     static final int SELECTOR_LEN = 4;
 
-    public static byte[] toRLP(String functionName, V3Type[] schema, Object[] vals, boolean withVersionId) {
+    public static byte[] toRLP(String functionName, V3Type[] schema, Object[] vals, boolean withSuffix) {
         List<Object> tuple = Arrays.asList(serializeTuple(schema, vals));
-        ByteBuffer encoding = ByteBuffer.allocate(SELECTOR_LEN + RLPEncoder.sumEncodedLen(tuple) + (withVersionId ? 1 : 0));
+        ByteBuffer encoding = ByteBuffer.allocate(SELECTOR_LEN + RLPEncoder.sumEncodedLen(tuple) + (withSuffix ? VERSION_SUFFIX.length : 0));
         encoding.put(generateSelector(functionName, schema));
         RLPEncoder.putSequence(tuple, encoding);
-        if(withVersionId) {
+        if(withSuffix) {
             encoding.put(VERSION_SUFFIX); // optional version bytes on the end
         }
         return encoding.array();
