@@ -95,7 +95,10 @@ public final class RLPItem implements Iterable<RLPItem> {
             default: throw new AssertionError();
             }
         } catch (IllegalArgumentException iae) {
-            return null;
+            if(Arrays.equals(Arrays.copyOfRange(buffer, index, buffer.length), V3.VERSION_SUFFIX)) {
+                return null;
+            }
+            throw iae;
         }
     }
 
