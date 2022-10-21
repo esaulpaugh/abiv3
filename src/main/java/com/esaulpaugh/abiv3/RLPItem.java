@@ -84,6 +84,9 @@ public final class RLPItem implements Iterable<RLPItem> {
 
     public static RLPItem wrap(byte[] buffer, int index, int containerEnd) {
         final byte lead = buffer[index];
+        if(lead == V3.VERSION_IDENTIFIER && containerEnd == index + 1) {
+            return null;
+        }
         final DataType type = DataType.type(lead);
         switch (type) {
         case SINGLE_BYTE: return newSingleByte(buffer, index, containerEnd);
@@ -172,6 +175,9 @@ public final class RLPItem implements Iterable<RLPItem> {
             }
             if (index < containerEnd) {
                 next = wrap(buffer, index, containerEnd);
+                if(next == null) {
+                    return false;
+                }
                 this.index = next.endIndex;
                 return true;
             }
@@ -189,8 +195,8 @@ public final class RLPItem implements Iterable<RLPItem> {
             throw new NoSuchElementException();
         }
 
-        static ABIv3Iterator sequenceIterator(byte[] buffer, int index, int containerEnd) {
-            return new ABIv3Iterator(buffer, index, containerEnd);
+        static ABIv3Iterator sequenceIterator(byte[] buffer, int index) {
+            return new ABIv3Iterator(buffer, index, buffer.length);
         }
     }
 }

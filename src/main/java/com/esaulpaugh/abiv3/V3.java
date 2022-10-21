@@ -53,11 +53,7 @@ public final class V3 {
 
     public static Object[] fromRLP(String functionName, V3Type[] schema, byte[] rlp) {
         checkSelector(generateSelector(functionName, schema), rlp);
-        return deserializeTuple(schema, RLPItem.ABIv3Iterator.sequenceIterator(
-                rlp,
-                SELECTOR_LEN,
-                rlp[rlp.length - 1] == VERSION_IDENTIFIER ? rlp.length - 1 : rlp.length)
-        );
+        return deserializeTuple(schema, RLPItem.ABIv3Iterator.sequenceIterator(rlp, SELECTOR_LEN));
     }
 
     private static byte[] generateSelector(String functionName, V3Type[] schema) {
