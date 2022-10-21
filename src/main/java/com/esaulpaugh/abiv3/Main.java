@@ -124,7 +124,7 @@ public final class Main {
     }
 
     private static void test(final V3Type[] schema, final Object... values) {
-        final byte[] rlp = V3.toRLP("foo", schema, values);
+        final byte[] rlp = V3.toRLP("foo", schema, values, true);
         System.out.println("case" + caseNumber++ + ":\t\t"
                 + new BigInteger(1, Arrays.copyOfRange(rlp, 0, 4)).toString(16) + "\t"
                 + V3.createSignature("foo", schema) + " --> "

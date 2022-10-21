@@ -34,21 +34,30 @@ public final class V3 {
     private static final byte[] TRUE = new byte[] { 0x1 };
     private static final byte[] FALSE = new byte[0];
 
+    public static final byte VERSION_IDENTIFIER = (byte) 0x81;
+
 //    private static final byte[] PREFIX = new byte[] { (byte) 0xca, (byte) 0xfe, (byte) 0xde, (byte) 0xf1 };
 
     static final int SELECTOR_LEN = 4;
 
-    public static byte[] toRLP(String functionName, V3Type[] schema, Object[] vals) {
+    public static byte[] toRLP(String functionName, V3Type[] schema, Object[] vals, boolean withVersionId) {
         List<Object> tuple = Arrays.asList(serializeTuple(schema, vals));
-        ByteBuffer encoding = ByteBuffer.allocate(SELECTOR_LEN + RLPEncoder.sumEncodedLen(tuple));
+        ByteBuffer encoding = ByteBuffer.allocate(SELECTOR_LEN + RLPEncoder.sumEncodedLen(tuple) + (withVersionId ? 1 : 0));
         encoding.put(generateSelector(functionName, schema));
         RLPEncoder.putSequence(tuple, encoding);
+        if(withVersionId) {
+            encoding.put(VERSION_IDENTIFIER); // optional version byte on the end
+        }
         return encoding.array();
     }
 
     public static Object[] fromRLP(String functionName, V3Type[] schema, byte[] rlp) {
         checkSelector(generateSelector(functionName, schema), rlp);
-        return deserializeTuple(schema, RLPItem.ABIv3Iterator.sequenceIterator(rlp, SELECTOR_LEN));
+        return deserializeTuple(schema, RLPItem.ABIv3Iterator.sequenceIterator(
+                rlp,
+                SELECTOR_LEN,
+                rlp[rlp.length - 1] == VERSION_IDENTIFIER ? rlp.length - 1 : rlp.length)
+        );
     }
 
     private static byte[] generateSelector(String functionName, V3Type[] schema) {

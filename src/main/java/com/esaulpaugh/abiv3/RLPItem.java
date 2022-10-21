@@ -189,8 +189,8 @@ public final class RLPItem implements Iterable<RLPItem> {
             throw new NoSuchElementException();
         }
 
-        static ABIv3Iterator sequenceIterator(byte[] buffer, int index) {
-            return new ABIv3Iterator(buffer, index, buffer.length);
+        static ABIv3Iterator sequenceIterator(byte[] buffer, int index, int containerEnd) {
+            return new ABIv3Iterator(buffer, index, containerEnd);
         }
     }
 }
