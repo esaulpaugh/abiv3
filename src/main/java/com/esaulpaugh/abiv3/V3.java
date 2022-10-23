@@ -55,19 +55,20 @@ public final class V3 {
     }
 
     public static Object[] fromRLP(V3Type[] schema, byte[] rlp) {
-        byte zeroth = rlp[0];
-        int version = zeroth & 0b1110_0000;
+        final byte zeroth = rlp[0];
+        final int version = zeroth & 0b1110_0000;
         if(version != V3_VERSION_ID) {
             throw new IllegalArgumentException();
         }
+        int sequenceStart = 1;
         int fnNumber = zeroth & 0b0001_1111;
         if(fnNumber >= 31) {
-            RLPItem fnNumberItem = RLPItem.wrap(rlp, 1, rlp.length);
+            final RLPItem fnNumberItem = RLPItem.wrap(rlp, 1, rlp.length);
             fnNumber = fnNumberItem.asInt();
             if(fnNumber < 31) throw new IllegalArgumentException();
-            return deserializeTuple(schema, RLPItem.ABIv3Iterator.sequenceIterator(rlp, fnNumberItem.endIndex));
+            sequenceStart = fnNumberItem.endIndex;
         }
-        return deserializeTuple(schema, RLPItem.ABIv3Iterator.sequenceIterator(rlp, 1));
+        return deserializeTuple(schema, RLPItem.ABIv3Iterator.sequenceIterator(rlp, sequenceStart));
     }
 
     private static byte[][] header(int functionNumber) {
