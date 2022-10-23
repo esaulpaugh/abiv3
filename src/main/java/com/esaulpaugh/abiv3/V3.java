@@ -61,14 +61,13 @@ public final class V3 {
             throw new IllegalArgumentException();
         }
         int fnNumber = zeroth & 0b0001_1111;
-        if(fnNumber == 31) {
+        if(fnNumber >= 31) {
             RLPItem fnNumberItem = RLPItem.wrap(rlp, 1, rlp.length);
             fnNumber = fnNumberItem.asInt();
             if(fnNumber < 31) throw new IllegalArgumentException();
             return deserializeTuple(schema, RLPItem.ABIv3Iterator.sequenceIterator(rlp, fnNumberItem.endIndex));
-        } else {
-            return deserializeTuple(schema, RLPItem.ABIv3Iterator.sequenceIterator(rlp, 1));
         }
+        return deserializeTuple(schema, RLPItem.ABIv3Iterator.sequenceIterator(rlp, 1));
     }
 
     private static byte[][] header(int functionNumber) {
