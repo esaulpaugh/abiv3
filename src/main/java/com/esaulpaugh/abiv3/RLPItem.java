@@ -172,9 +172,6 @@ public final class RLPItem implements Iterable<RLPItem> {
             }
             if (index < containerEnd) {
                 next = wrap(buffer, index, containerEnd);
-                if(next == null) {
-                    return false;
-                }
                 this.index = next.endIndex;
                 return true;
             }
