@@ -35,7 +35,7 @@ public final class V3 {
     private static final byte[] TRUE = new byte[] { 0x1 };
     private static final byte[] FALSE = new byte[0];
 
-    static final byte VERSION_ID = 0;
+    static final byte V3_VERSION_ID = 0;
 
 //    private static final byte[] PREFIX = new byte[] { (byte) 0xca, (byte) 0xfe, (byte) 0xde, (byte) 0xf1 };
 
@@ -57,7 +57,7 @@ public final class V3 {
     public static Object[] fromRLP(V3Type[] schema, byte[] rlp) {
         byte zeroth = rlp[0];
         int version = zeroth & 0b1110_0000;
-        if(version != VERSION_ID) {
+        if(version != V3_VERSION_ID) {
             throw new IllegalArgumentException();
         }
         int fnNumber = zeroth & 0b0001_1111;
