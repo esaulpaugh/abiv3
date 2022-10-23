@@ -72,6 +72,7 @@ public final class V3 {
     }
 
     private static byte[][] header(int functionNumber) {
+        if(functionNumber < 0) throw new IllegalArgumentException();
         final byte[] fnNumber = Integers.toBytes(functionNumber);
         if(functionNumber < 31) {
             if(functionNumber == 0) {
