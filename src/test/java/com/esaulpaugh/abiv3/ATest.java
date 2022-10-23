@@ -17,7 +17,7 @@ package com.esaulpaugh.abiv3;
 
 import org.junit.jupiter.api.Test;
 
-public class ATest {
+class ATest {
 
     @Test
     void gogo() {
