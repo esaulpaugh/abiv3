@@ -22,6 +22,8 @@ import java.util.Random;
 
 public final class Main {
 
+    private static final Random RANDOM = new Random();
+
     static final V3Type DYN_ARR_OF_BOOL = new V3Type("bool[]", -1, V3Type.BOOL, boolean.class, false);
     static final V3Type ARR_0_OF_BOOL = new V3Type("bool[0]", 0, V3Type.BOOL, boolean.class, false);
     static final V3Type ARR_8_OF_BOOL = new V3Type("bool[8]", 8, V3Type.BOOL, boolean.class, false);
@@ -125,7 +127,7 @@ public final class Main {
     }
 
     private static void test(final V3Type[] schema, final Object... values) {
-        test(new Random().nextInt(260), schema, values);
+        test(RANDOM.nextInt(260), schema, values);
     }
 
     private static void test(final int fnNumber, final V3Type[] schema, final Object... values) {
