@@ -47,7 +47,7 @@ class V3:
         sequence_start = 1
         fn_number = zeroth & 0b0001_1111
         if fn_number >= 31:
-            fn_number_item = RLPItem.wrap(rlp, 1, rlp.length)
+            fn_number_item = Utils.wrap(rlp, 1, rlp.length)
             fn_number = fn_number_item.asInt()
             if fn_number < 31:
                 raise Exception()
