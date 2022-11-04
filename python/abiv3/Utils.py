@@ -14,6 +14,14 @@
 from abiv3.RLPItem import RLPItem
 
 
+def unsigned_length(val):
+    n = 0
+    while val != 0:
+        n = n + 1
+        val = val >> 8
+    return n
+
+
 def to_signed_byte(lead):
     if lead >= 128:
         return lead - 256
@@ -21,18 +29,7 @@ def to_signed_byte(lead):
 
 
 def unsigned_to_bytes(number):
-    if number < 0 or number >= 2**(8*33):
-        raise Exception('na fam')
-    arr = number.to_bytes(33, "big")
-    zero = False
-    for i in range(0, 33):
-        if arr[i] != 0:
-            return arr[i: 33: 1]
-        else:
-            zero = True
-    if zero:
-        return b''
-    raise Exception('so big')
+    return number.to_bytes(unsigned_length(number), "big")
 
 
 def get_int(buffer, dataIndex, dataLength):

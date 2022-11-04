@@ -18,16 +18,8 @@ from abiv3.RLPItem import RLPItem
 class RLPEncoder:
 
     @staticmethod
-    def length(val):
-        length = 0
-        while val != 0:
-            length = length + 1
-            val = val >> 8
-        return length
-
-    @staticmethod
     def item_length(data_len):
-        return (1 if data_len < 56 else 1 + RLPEncoder.length(data_len)) + data_len
+        return (1 if data_len < 56 else 1 + Utils.unsigned_length(data_len)) + data_len
 
     @staticmethod
     def str_encoded_len(byte_string):
@@ -76,7 +68,7 @@ class RLPEncoder:
                 return
             dest.put(0x80 + data_len)  # data_len is 0 or 2-55
         else:  # long string
-            dest.put(0xb7 + RLPEncoder.length(data_len))
+            dest.put(0xb7 + Utils.unsigned_length(data_len))
             arr = Utils.unsigned_to_bytes(data_len)
             dest.put(arr)
         dest.put(byte_string)
@@ -86,7 +78,7 @@ class RLPEncoder:
         if data_len < 56:
             dest.put(0xc0 + data_len)
         else:
-            dest.put(0xf7 + RLPEncoder.length(data_len))
+            dest.put(0xf7 + Utils.unsigned_length(data_len))
             arr = Utils.unsigned_to_bytes(data_len)
             dest.put(arr)
 
