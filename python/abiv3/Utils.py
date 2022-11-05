@@ -14,6 +14,22 @@
 from abiv3.RLPItem import RLPItem
 
 
+def to_bytes(number):
+    return to_bytes_unsigned(number) if number >= 0 else to_bytes_negative(number)
+
+
+def to_bytes_unsigned(number):
+    return number.to_bytes(unsigned_length(number), "big")
+
+
+def unsigned_length(val):
+    n = 0
+    while val != 0:
+        n = n + 1
+        val = val >> 8
+    return n
+
+
 def to_bytes_negative(val):
     n = 0
     temp = val
@@ -28,37 +44,10 @@ def to_bytes_negative(val):
     return arr
 
 
-def to_bytes(number):
-    # byte_len = negative_length(number) if number < 0 else unsigned_length(number)
-    # if byte_len == 0:
-    #     return b''
-    return to_bytes_negative(number) if number < 0 else unsigned_to_bytes(number)
-
-
-def unsigned_length(val):
-    n = 0
-    while val != 0:
-        n = n + 1
-        val = val >> 8
-    return n
-
-
 def to_signed_byte(lead):
     if lead >= 128:
         return lead - 256
     return lead
-
-
-def unsigned_to_bytes(number):
-    return number.to_bytes(unsigned_length(number), "big")
-
-
-def get_int(buffer, dataIndex, dataLength):
-    return None
-
-
-def get_big_int(buffer, dataIndex, dataLength):
-    return None
 
 
 def wrap(buffer, index, container_end):

@@ -15,8 +15,8 @@ from PyByteBuffer import ByteBuffer
 
 from abiv3 import Utils
 from abiv3.RLPEncoder import RLPEncoder
-from abiv3.RLPItem import RLPItem
 from abiv3.RLPIterator import RLPIterator
+
 
 ## next tuple len list type str sum bytes int
 class V3:
@@ -56,7 +56,7 @@ class V3:
 
     @staticmethod
     def header(fn_num):
-        arr = Utils.unsigned_to_bytes(fn_num)
+        arr = Utils.to_bytes_unsigned(fn_num)
         if fn_num < 31:
             if fn_num == 0:
                 return [b'\x00']

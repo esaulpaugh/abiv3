@@ -69,7 +69,7 @@ class RLPEncoder:
             dest.put(0x80 + data_len)  # data_len is 0 or 2-55
         else:  # long string
             dest.put(0xb7 + Utils.unsigned_length(data_len))
-            arr = Utils.unsigned_to_bytes(data_len)
+            arr = Utils.to_bytes_unsigned(data_len)
             dest.put(arr)
         dest.put(byte_string)
 
@@ -79,7 +79,7 @@ class RLPEncoder:
             dest.put(0xc0 + data_len)
         else:
             dest.put(0xf7 + Utils.unsigned_length(data_len))
-            arr = Utils.unsigned_to_bytes(data_len)
+            arr = Utils.to_bytes_unsigned(data_len)
             dest.put(arr)
 
     @staticmethod

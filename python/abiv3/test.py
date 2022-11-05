@@ -44,8 +44,8 @@ from abiv3.V3Type import V3Type
 # for i in range(0, n):
 #     print(RLPItem.to_signed_byte(arr[i]))
 
-schema = [V3Type.BOOL, V3Type.INT256, V3Type.BYTES, V3Type.INT256_ARRAY_3]
-objects = [True, 5, b'\x03\x09', [10, -16777215, 0]]  # TODO decimals, negative integers
+schema = [V3Type.BOOL, V3Type.INT256, V3Type.BYTES, V3Type.INT256_ARRAY_3, V3Type.UFIXED_128_X_18]
+objects = [True, 5, b'\x03\x09', [10, -16777215, 0], -10.9]  # TODO decimals
 
 print(objects)
 
