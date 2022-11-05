@@ -112,7 +112,7 @@ class V3:
         if code == 3:
             return V3.deserialize_array(v3_type, sequence_iterator)
         if code == 4:
-            return V3.deserialize_tuple(v3_type.elementTypes, sequence_iterator)
+            return V3.deserialize_tuple(v3_type.elementTypes, sequence_iterator.next().iterator())
         raise Exception('??')
 
     @staticmethod
@@ -124,9 +124,9 @@ class V3:
         enc = sequence_iterator.next().data()
         if enc == b'\x01':
             return True
-        if enc == b'\x00':
+        if enc == b'':
             return False
-        raise Exception('illegal boolean RLP: 0x" + enc + ". Expected 0x1 or 0x0')
+        raise Exception('illegal boolean RLP: expected 0x1 or 0x0')
 
     @staticmethod
     def serialize_integer(v3_type, val):
