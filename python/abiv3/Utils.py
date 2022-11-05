@@ -14,6 +14,27 @@
 from abiv3.RLPItem import RLPItem
 
 
+def to_bytes_negative(val):
+    n = 0
+    temp = val
+    while temp != -1:
+        n = n + 1
+        temp = temp >> 8
+    arr = bytearray(n)
+    while val != -1:
+        n = n - 1
+        arr[n] = val & 0xff
+        val = val >> 8
+    return arr
+
+
+def to_bytes(number):
+    # byte_len = negative_length(number) if number < 0 else unsigned_length(number)
+    # if byte_len == 0:
+    #     return b''
+    return to_bytes_negative(number) if number < 0 else unsigned_to_bytes(number)
+
+
 def unsigned_length(val):
     n = 0
     while val != 0:

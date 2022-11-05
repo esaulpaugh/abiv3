@@ -28,10 +28,10 @@ class RLPItem:
         return self.buffer[self.dataIndex: self.endIndex: 1]
 
     def as_int(self):
-        return int.from_bytes(self.data(), "big")
+        return int.from_bytes(self.data(), byteorder='big')
 
     def as_int_signed(self):
-        return int.from_bytes(self.data(), "big", True)
+        return int.from_bytes(self.data(), byteorder='big', signed=True)
 
     def elements(self):
         the_list = []

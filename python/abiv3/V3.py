@@ -131,9 +131,9 @@ class V3:
     @staticmethod
     def serialize_integer(v3_type, val):
         if val != 0:
-            the_bytes = Utils.unsigned_to_bytes(val)
+            the_bytes = Utils.to_bytes(val)
             if val < 0:
-                return V3.sign_extend_negative(the_bytes, v3_type.bitLen / 8)
+                return V3.sign_extend_negative(the_bytes, int(v3_type.bitLen / 8))
             if the_bytes[0] != 0:
                 return the_bytes
             return the_bytes[1: len(the_bytes): 1]
@@ -145,7 +145,7 @@ class V3:
         for i in range(0, new_width):
             extended[i] = 0xff
         negative_len = len(negative)
-        j = new_width - negative.length
+        j = new_width - negative_len
         for i in range(0, negative_len):
             extended[j] = negative[i]
             j = j + 1
