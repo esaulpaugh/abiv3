@@ -18,7 +18,7 @@ from abiv3.RLPEncoder import RLPEncoder
 from abiv3.RLPIterator import RLPIterator
 
 
-## next tuple len list type str sum bytes int
+# next tuple len list type str sum bytes int
 class V3:
 
     V3_VERSION_ID = 0
