@@ -22,5 +22,7 @@ class ATest {
     @Test
     void gogo() {
         System.out.println("main class is " + Main.class.getName());
+
+        Main.main(new String[0]);
     }
 }
