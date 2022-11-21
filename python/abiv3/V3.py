@@ -164,7 +164,7 @@ class V3:
             return the_bytes
         elif v3_type.elementType.typeCode == V3Type.TYPE_CODE_INTEGER:
             return V3.serialize_integer_array(v3_type, arr)
-        return V3.serialize_object_array(v3_type, arr)
+        return V3.serialize_object_array(v3_type, arr, 0)
 
     @staticmethod
     def deserialize_array(v3_type, sequence_iterator):
@@ -175,48 +175,39 @@ class V3:
             return the_bytes
         elif v3_type.elementType.typeCode == V3Type.TYPE_CODE_INTEGER:
             return V3.deserialize_integer_array(v3_type, sequence_iterator.next())
-        return V3.deserialize_object_array(v3_type, sequence_iterator.next())
-
-    @staticmethod
-    def serialize_object_array(v3_type, arr):
-        V3.validate_length(v3_type.arrayLen, len(arr))
-        out = []
-        for i in range(0, len(arr)):
-            out.append(V3.serialize(v3_type.elementType, arr[i]))
-        return out
-
-    @staticmethod
-    def deserialize_object_array(v3_type, list_item):
-        elements = list_item.elements()
-        list_iter = list_item.iterator()
-        found = []
-        for i in range(0, len(elements)):
-            found.append(V3.deserialize(v3_type.elementType, list_iter))
-        return found
+        return V3.deserialize_object_array(v3_type, sequence_iterator.next(), False)
 
     @staticmethod
     def serialize_integer_array(v3_type, arr):
         V3.validate_length(v3_type.arrayLen, len(arr))
         sequence_len = 0
+        max_raw_len = 0
         for e in arr:
             int_bytes = V3.serialize_integer(v3_type.elementType, e)
             sequence_len += RLPEncoder.encoded_len(int_bytes)
-            if sequence_len >= 56:
-                return V3.serialize_large_integer_array(v3_type, arr)
-        return V3.serialize_object_array(v3_type, arr)
+            if len(int_bytes) > max_raw_len:
+                max_raw_len = len(int_bytes)
+        var_width = V3.serialize_object_array(v3_type, arr, 1)
+        var_width[0] = b'0x00'
+        var_width_len = RLPEncoder.sum_encoded_len(var_width)
+        fixed_width = V3.serialize_large_integer_array(v3_type, arr, max_raw_len)
+        return var_width if var_width_len < len(fixed_width) else fixed_width
 
     @staticmethod
     def deserialize_integer_array(v3_type, arr):
-        return V3.deserialize_large_integer_array(v3_type, arr) if arr.dataLength >= 56 else V3.deserialize_object_array(v3_type, arr)
+        data = arr.data()
+        if data[0] != 0x00:
+            return V3.deserialize_large_integer_array(arr)
+        return V3.deserialize_object_array(v3_type, arr, True)
 
     @staticmethod
-    def serialize_large_integer_array(v3_type, arr):
-        element_len = v3_type.elementType.bitLen // 8
-        buf_len = element_len * len(arr)
-        buf = ByteBuffer.allocate(buf_len)
+    def serialize_large_integer_array(v3_type, arr, byte_width):
+        buf_len = byte_width * len(arr)
+        buf = ByteBuffer.allocate(1 + buf_len)
+        buf.put(byte_width)
         for e in arr:
             int_bytes = V3.serialize_integer(v3_type.elementType, e)
-            pad_len = element_len - len(int_bytes)
+            pad_len = byte_width - len(int_bytes)
             for i in range(0, pad_len):
                 buf.put(0)
             buf.put(int_bytes)
@@ -224,13 +215,36 @@ class V3:
         return buf.array(buf_len)
 
     @staticmethod
-    def deserialize_large_integer_array(v3_type, arr):
-        element_len = v3_type.elementType.bitLen // 8
-        result_len = arr.dataLength // element_len
+    def deserialize_large_integer_array(arr):
         result = []
-        pos = arr.dataIndex
+        pos = arr.dataIndex + 1
+        element_len = arr.buffer[arr.dataIndex]
+        result_len = (arr.dataLength - 1) // element_len
         for i in range(0, result_len):
             chunk = arr.buffer[pos: pos + element_len: 1]
             result.append(int.from_bytes(chunk, byteorder="big"))
             pos = pos + element_len
         return result
+
+    @staticmethod
+    def serialize_object_array(v3_type, arr, first):
+        V3.validate_length(v3_type.arrayLen, len(arr))
+        out = []
+        if first is not None:
+            out.append(first)
+        for i in range(0, len(arr)):
+            out.append(V3.serialize(v3_type.elementType, arr[i]))
+        return out
+
+    @staticmethod
+    def deserialize_object_array(v3_type, list_item, skip_first):
+        elements = list_item.elements()
+        list_iter = list_item.iterator()
+        num_elements = len(elements)
+        if skip_first:
+            list_iter.next()
+            num_elements = num_elements - 1
+        found = []
+        for i in range(0, num_elements):
+            found.append(V3.deserialize(v3_type.elementType, list_iter))
+        return found
