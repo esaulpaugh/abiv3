@@ -196,7 +196,7 @@ public final class V3 {
         switch (et.typeCode) {
         case V3Type.TYPE_CODE_BOOLEAN: return serializeBooleanArray(type, (boolean[]) arr);
         case V3Type.TYPE_CODE_BYTE: return serializeByteArray(type, arr);
-        case V3Type.TYPE_CODE_BIG_INTEGER:
+        case V3Type.TYPE_CODE_BIG_INTEGER: return serializeBigIntegerArray(type, (BigInteger[]) arr);
         case V3Type.TYPE_CODE_ARRAY:
         case V3Type.TYPE_CODE_TUPLE: return serializeObjectArray(type, (Object[]) arr);
         default: throw new AssertionError();
@@ -208,9 +208,9 @@ public final class V3 {
         switch (et.typeCode) {
         case V3Type.TYPE_CODE_BOOLEAN: return deserializeBooleanArray(type, sequenceIterator);
         case V3Type.TYPE_CODE_BYTE: return deserializeByteArray(type, sequenceIterator);
-        case V3Type.TYPE_CODE_BIG_INTEGER:
+        case V3Type.TYPE_CODE_BIG_INTEGER: return deserializeBigIntegerArray(type, sequenceIterator.next());
         case V3Type.TYPE_CODE_ARRAY:
-        case V3Type.TYPE_CODE_TUPLE: return deserializeObjectArray(type, sequenceIterator);
+        case V3Type.TYPE_CODE_TUPLE: return deserializeObjectArray(type, sequenceIterator.next());
         default: throw new AssertionError();
         }
     }
@@ -269,6 +269,49 @@ public final class V3 {
                 : sequenceIterator.next().data();
     }
 
+    private static Object serializeBigIntegerArray(V3Type type, BigInteger[] arr) {
+        validateLength(type.arrayLen, arr.length);
+        int sequenceLen = 0;
+        for (BigInteger e : arr) {
+            byte[] bigIntBytes = serializeBigInteger(type.elementType, e);
+            sequenceLen += RLPEncoder.encodedLen(bigIntBytes);
+            if (sequenceLen >= 56) {
+                return serializeLargeBigIntegerArray(type, arr);
+            }
+        }
+        return serializeObjectArray(type, arr);
+    }
+
+    private static byte[] serializeLargeBigIntegerArray(V3Type type, BigInteger[] arr) {
+        final int elementLen = type.elementType.bitLen / 8;
+        ByteBuffer buffer = ByteBuffer.allocate(elementLen * arr.length);
+        for (BigInteger e : arr) {
+            byte[] bigIntBytes = serializeBigInteger(type.elementType, e);
+            final int padLen = elementLen - bigIntBytes.length;
+            for (int i = 0; i < padLen; i++) {
+                buffer.put((byte) 0);
+            }
+            buffer.put(bigIntBytes);
+        }
+        return buffer.array();
+    }
+
+    private static Object[] deserializeBigIntegerArray(V3Type type, RLPItem list) {
+        return list.dataLength >= 56
+                ? deserializeLargeBigIntegerArray(type, list)
+                : deserializeObjectArray(type, list);
+    }
+
+    private static Object[] deserializeLargeBigIntegerArray(V3Type type, RLPItem list) {
+        final int elementLen = type.elementType.bitLen / 8;
+        BigInteger[] result = new BigInteger[list.dataLength / elementLen];
+        for (int i = 0, pos = list.dataIndex; i < result.length; i++, pos += elementLen) {
+            byte[] bytes = Arrays.copyOfRange(list.buffer, pos, pos + elementLen);
+            result[i] = new BigInteger(bytes);
+        }
+        return result;
+    }
+
     private static Object[] serializeObjectArray(V3Type type, Object[] objects) {
         validateLength(type.arrayLen, objects.length);
         final Object[] out = new Object[objects.length];
@@ -278,8 +321,8 @@ public final class V3 {
         return out;
     }
 
-    private static Object[] deserializeObjectArray(V3Type type, Iterator<RLPItem> sequenceIterator) {
-        final List<RLPItem> elements = sequenceIterator.next().elements();
+    private static Object[] deserializeObjectArray(V3Type type, RLPItem list) {
+        final List<RLPItem> elements = list.elements();
         final Iterator<RLPItem> listSeqIter = elements.iterator();
         final Object[] in = (Object[]) Array.newInstance(type.elementClass, elements.size()); // reflection
         for (int i = 0; i < in.length; i++) {

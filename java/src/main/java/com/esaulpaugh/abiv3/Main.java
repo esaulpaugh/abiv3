@@ -62,6 +62,27 @@ public final class Main {
 
         System.out.println("#\t\t\tfn#\t\tSignature\t\tCalldata example");
 
+        final BigInteger[] bigInts = new BigInteger[] {
+                BigInteger.valueOf(2L),
+                BigInteger.ZERO,
+                new BigInteger("16777216"),
+                new BigInteger("16777217"),
+                new BigInteger("16777218"),
+                new BigInteger("16777219"),
+                new BigInteger("16777220"),
+                new BigInteger("16777221"),
+                new BigInteger("16777222"),
+                new BigInteger("16777223"),
+                new BigInteger("16777224"),
+                new BigInteger("16777225"),
+                new BigInteger("65535")
+        };
+
+        testSingle(DYN_ARR_OF_UINT72, bigInts);
+
+        bigInts[bigInts.length - 1] = new BigInteger("65536");
+        testSingle(DYN_ARR_OF_UINT72, bigInts);
+
         testSingle(new V3Type("bool[12]", 12, V3Type.BOOL, boolean.class, false),
                 new boolean[] { false, false, false, false, false, true, true, true, true, true, true, true });
 
