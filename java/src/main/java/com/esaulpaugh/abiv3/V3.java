@@ -198,7 +198,7 @@ public final class V3 {
         case V3Type.TYPE_CODE_BYTE: return serializeByteArray(type, arr);
         case V3Type.TYPE_CODE_BIG_INTEGER: return serializeBigIntegerArray(type, (BigInteger[]) arr);
         case V3Type.TYPE_CODE_ARRAY:
-        case V3Type.TYPE_CODE_TUPLE: return serializeObjectArray(type, (Object[]) arr);
+        case V3Type.TYPE_CODE_TUPLE: return serializeObjectArray(type, (Object[]) arr, 0);
         default: throw new AssertionError();
         }
     }
@@ -210,7 +210,7 @@ public final class V3 {
         case V3Type.TYPE_CODE_BYTE: return deserializeByteArray(type, sequenceIterator);
         case V3Type.TYPE_CODE_BIG_INTEGER: return deserializeBigIntegerArray(type, sequenceIterator.next());
         case V3Type.TYPE_CODE_ARRAY:
-        case V3Type.TYPE_CODE_TUPLE: return deserializeObjectArray(type, sequenceIterator.next());
+        case V3Type.TYPE_CODE_TUPLE: return deserializeObjectArray(type, sequenceIterator.next(), false);
         default: throw new AssertionError();
         }
     }
@@ -271,23 +271,28 @@ public final class V3 {
 
     private static Object serializeBigIntegerArray(V3Type type, BigInteger[] arr) {
         validateLength(type.arrayLen, arr.length);
-        int sequenceLen = 0;
+        int maxRawLen = 0;
         for (BigInteger e : arr) {
             byte[] bigIntBytes = serializeBigInteger(type.elementType, e);
-            sequenceLen += RLPEncoder.encodedLen(bigIntBytes);
-            if (sequenceLen >= 56) {
-                return serializeLargeBigIntegerArray(type, arr);
+            if (bigIntBytes.length > maxRawLen) {
+                maxRawLen = bigIntBytes.length;
             }
         }
-        return serializeObjectArray(type, arr);
+        Object[] varWidth = serializeObjectArray(type, arr, 1);
+        varWidth[0] = new byte[] { (byte) 0x00 };
+        int varWidthLen = RLPEncoder.sumEncodedLen(Arrays.asList(varWidth));
+        byte[] fixedWidth = serializeLargeBigIntegerArray(type, arr, maxRawLen);
+        return varWidthLen < fixedWidth.length
+                ? varWidth
+                : fixedWidth;
     }
 
-    private static byte[] serializeLargeBigIntegerArray(V3Type type, BigInteger[] arr) {
-        final int elementLen = type.elementType.bitLen / 8;
-        ByteBuffer buffer = ByteBuffer.allocate(elementLen * arr.length);
+    private static byte[] serializeLargeBigIntegerArray(V3Type type, BigInteger[] arr, int byteWidth) {
+        ByteBuffer buffer = ByteBuffer.allocate(1 + byteWidth * arr.length);
+        buffer.put((byte) byteWidth);
         for (BigInteger e : arr) {
             byte[] bigIntBytes = serializeBigInteger(type.elementType, e);
-            final int padLen = elementLen - bigIntBytes.length;
+            final int padLen = byteWidth - bigIntBytes.length;
             for (int i = 0; i < padLen; i++) {
                 buffer.put((byte) 0);
             }
@@ -297,34 +302,41 @@ public final class V3 {
     }
 
     private static Object[] deserializeBigIntegerArray(V3Type type, RLPItem list) {
-        return list.dataLength >= 56
-                ? deserializeLargeBigIntegerArray(type, list)
-                : deserializeObjectArray(type, list);
+        byte[] data = list.data();
+        if (data[0] != (byte) 0x00) {
+            return deserializeLargeBigIntegerArray(list);
+        }
+        return deserializeObjectArray(type, list, true);
     }
 
-    private static Object[] deserializeLargeBigIntegerArray(V3Type type, RLPItem list) {
-        final int elementLen = type.elementType.bitLen / 8;
-        BigInteger[] result = new BigInteger[list.dataLength / elementLen];
-        for (int i = 0, pos = list.dataIndex; i < result.length; i++, pos += elementLen) {
+    private static Object[] deserializeLargeBigIntegerArray(RLPItem list) {
+        final int elementLen = list.buffer[list.dataIndex];
+        BigInteger[] result = new BigInteger[(list.dataLength - 1) / elementLen];
+        for (int i = 0, pos = list.dataIndex + 1; i < result.length; i++, pos += elementLen) {
             byte[] bytes = Arrays.copyOfRange(list.buffer, pos, pos + elementLen);
             result[i] = new BigInteger(bytes);
         }
         return result;
     }
 
-    private static Object[] serializeObjectArray(V3Type type, Object[] objects) {
+    private static Object[] serializeObjectArray(V3Type type, Object[] objects, final int offset) {
         validateLength(type.arrayLen, objects.length);
-        final Object[] out = new Object[objects.length];
+        final Object[] out = new Object[offset + objects.length];
         for (int i = 0; i < objects.length; i++) {
-            out[i] = serialize(type.elementType, objects[i]);
+            out[i + offset] = serialize(type.elementType, objects[i]);
         }
         return out;
     }
 
-    private static Object[] deserializeObjectArray(V3Type type, RLPItem list) {
+    private static Object[] deserializeObjectArray(V3Type type, RLPItem list, boolean skipFirst) {
         final List<RLPItem> elements = list.elements();
         final Iterator<RLPItem> listSeqIter = elements.iterator();
-        final Object[] in = (Object[]) Array.newInstance(type.elementClass, elements.size()); // reflection
+        int numElements = elements.size();
+        if (skipFirst) {
+            listSeqIter.next();
+            numElements--;
+        }
+        final Object[] in = (Object[]) Array.newInstance(type.elementClass, numElements); // reflection
         for (int i = 0; i < in.length; i++) {
             in[i] = deserialize(type.elementType, listSeqIter);
         }
