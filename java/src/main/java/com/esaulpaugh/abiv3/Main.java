@@ -90,7 +90,7 @@ public final class Main {
 
         test(
                 new V3Type[] { FIXED_128x18, FIXED_128x18 },
-                new BigDecimal(BigInteger.TEN, 18), new BigDecimal(BigInteger.valueOf(125_000L), 18)
+                BigInteger.TEN, BigInteger.valueOf(125_000L)
         );
 
         test(

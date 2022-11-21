@@ -138,7 +138,6 @@ public final class V3 {
         switch (type.typeCode) {
         case V3Type.TYPE_CODE_BOOLEAN: return serializeBoolean((boolean) obj);
         case V3Type.TYPE_CODE_BIG_INTEGER: return serializeBigInteger(type, (BigInteger) obj);
-        case V3Type.TYPE_CODE_BIG_DECIMAL: return serializeBigInteger(type, ((BigDecimal) obj).unscaledValue());
         case V3Type.TYPE_CODE_ARRAY: return serializeArray(type, obj);
         case V3Type.TYPE_CODE_TUPLE: return serializeTuple(type.elementTypes, (Object[]) obj);
         default: throw new AssertionError();
@@ -149,7 +148,6 @@ public final class V3 {
         switch (type.typeCode) {
         case V3Type.TYPE_CODE_BOOLEAN: return deserializeBoolean(sequenceIterator);
         case V3Type.TYPE_CODE_BIG_INTEGER: return deserializeBigInteger(type, sequenceIterator);
-        case V3Type.TYPE_CODE_BIG_DECIMAL: return new BigDecimal(deserializeBigInteger(type, sequenceIterator), type.scale);
         case V3Type.TYPE_CODE_ARRAY: return deserializeArray(type, sequenceIterator);
         case V3Type.TYPE_CODE_TUPLE: return deserializeTuple(type.elementTypes, sequenceIterator.next().iterator());
         default: throw new AssertionError();
@@ -199,7 +197,6 @@ public final class V3 {
         case V3Type.TYPE_CODE_BOOLEAN: return serializeBooleanArray(type, (boolean[]) arr);
         case V3Type.TYPE_CODE_BYTE: return serializeByteArray(type, arr);
         case V3Type.TYPE_CODE_BIG_INTEGER:
-        case V3Type.TYPE_CODE_BIG_DECIMAL:
         case V3Type.TYPE_CODE_ARRAY:
         case V3Type.TYPE_CODE_TUPLE: return serializeObjectArray(type, (Object[]) arr);
         default: throw new AssertionError();
@@ -212,7 +209,6 @@ public final class V3 {
         case V3Type.TYPE_CODE_BOOLEAN: return deserializeBooleanArray(type, sequenceIterator);
         case V3Type.TYPE_CODE_BYTE: return deserializeByteArray(type, sequenceIterator);
         case V3Type.TYPE_CODE_BIG_INTEGER:
-        case V3Type.TYPE_CODE_BIG_DECIMAL:
         case V3Type.TYPE_CODE_ARRAY:
         case V3Type.TYPE_CODE_TUPLE: return deserializeObjectArray(type, sequenceIterator);
         default: throw new AssertionError();

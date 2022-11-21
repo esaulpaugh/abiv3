@@ -19,9 +19,8 @@ public final class V3Type {
 
     public static final int TYPE_CODE_BOOLEAN = 0;
     public static final int TYPE_CODE_BIG_INTEGER = 1;
-    public static final int TYPE_CODE_BIG_DECIMAL = 2;
-    public static final int TYPE_CODE_ARRAY = 3;
-    public static final int TYPE_CODE_TUPLE = 4;
+    public static final int TYPE_CODE_ARRAY = 2;
+    public static final int TYPE_CODE_TUPLE = 3;
     public static final int TYPE_CODE_BYTE = 9;
 
     final int typeCode;
@@ -48,7 +47,7 @@ public final class V3Type {
     }
 
     V3Type(String canonicalType, Boolean unsigned, Integer bitLen, Integer scale) {
-        this(canonicalType, TYPE_CODE_BIG_DECIMAL, null, null, null, null, unsigned, bitLen, scale, null);
+        this(canonicalType, TYPE_CODE_BIG_INTEGER, null, null, null, null, unsigned, bitLen, scale, null);
     }
 
     V3Type(String canonicalType, V3Type[] elementTypes) {
