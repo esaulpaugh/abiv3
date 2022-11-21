@@ -16,6 +16,7 @@ from PyByteBuffer import ByteBuffer
 from abiv3 import Utils
 from abiv3.RLPEncoder import RLPEncoder
 from abiv3.RLPIterator import RLPIterator
+from abiv3.V3Type import V3Type
 
 
 # next tuple len list type str sum bytes int
@@ -88,30 +89,26 @@ class V3:
     @staticmethod
     def serialize(v3_type, obj):
         code = v3_type.typeCode
-        if code == 0:
+        if code == V3Type.TYPE_CODE_BOOLEAN:
             return V3.serialize_boolean(obj)
-        if code == 1:
+        if code == V3Type.TYPE_CODE_BIG_INTEGER:
             return V3.serialize_integer(v3_type, obj)
-        if code == 2:
-            return V3.serialize_decimal(v3_type, obj)
-        if code == 3:
+        if code == V3Type.TYPE_CODE_ARRAY:
             return V3.serialize_array(v3_type, obj)
-        if code == 4:
+        if code == V3Type.TYPE_CODE_TUPLE:
             return V3.serialize_tuple(v3_type.elementTypes, obj)
         raise Exception('??')
 
     @staticmethod
     def deserialize(v3_type, sequence_iterator):
         code = v3_type.typeCode
-        if code == 0:
+        if code == V3Type.TYPE_CODE_BOOLEAN:
             return V3.deserialize_boolean(sequence_iterator)
-        if code == 1:
+        if code == V3Type.TYPE_CODE_BIG_INTEGER:
             return V3.deserialize_integer(v3_type, sequence_iterator)
-        if code == 2:
-            return V3.deserialize_decimal(v3_type, sequence_iterator)
-        if code == 3:
+        if code == V3Type.TYPE_CODE_ARRAY:
             return V3.deserialize_array(v3_type, sequence_iterator)
-        if code == 4:
+        if code == V3Type.TYPE_CODE_TUPLE:
             return V3.deserialize_tuple(v3_type.elementTypes, sequence_iterator.next().iterator())
         raise Exception('??')
 
@@ -157,14 +154,6 @@ class V3:
         if v3_type.unsigned or ((item.dataLength * 8) < v3_type.bitLen):
             return item.as_int()
         return item.as_int_signed()
-
-    @staticmethod
-    def serialize_decimal(v3_type, val):
-        return None
-
-    @staticmethod
-    def deserialize_decimal(v3_type, val):
-        return None
 
     @staticmethod
     def serialize_array(v3_type, arr):
