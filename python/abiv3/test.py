@@ -47,8 +47,41 @@ from abiv3.V3Type import V3Type
 # schema = [V3Type.BOOL, V3Type.INT256, V3Type.BYTES, V3Type.INT256_ARRAY_3, V3Type.UFIXED_128_X_18]
 # objects = [True, 5, b'\x03\x09', [10, -16777215, 0], -10.9]  # TODO decimals
 
-schema = [V3Type.TUPLE_BOOL_INT256]
-objects = [[False, -128]]
+schema = [V3Type.DYN_ARR_OF_UINT72]
+ints = [
+    2,
+    0,
+    16_777_216,
+    16_777_217,
+    16_777_218,
+    16_777_219,
+    16_777_220,
+    16_777_221,
+    16_777_222,
+    16_777_223,
+    16_777_224,
+    16_777_225,
+    65535
+]
+objects = [ints]
+
+print(objects)
+
+arr = V3.to_rlp(0, schema, objects)
+
+n = len(arr)
+print('len = ' + str(n))
+print(binascii.hexlify(arr))
+# for i in range(0, n):
+#     print(Utils.to_signed_byte(arr[i]))
+
+decoded = V3.from_rlp(schema, arr)
+print(decoded)
+
+# =================================
+ints[len(ints) - 1] = 65536
+print()
+# =================================
 
 print(objects)
 

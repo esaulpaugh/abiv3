@@ -74,7 +74,8 @@ class V3:
         V3.validate_length(len(schema), len(vals))
         out = []
         for i in range(0, len(schema)):
-            out.append(V3.serialize(schema[i], vals[i]))
+            element = V3.serialize(schema[i], vals[i])
+            out.append(element)
         return out
 
     @staticmethod
@@ -91,7 +92,7 @@ class V3:
         code = v3_type.typeCode
         if code == V3Type.TYPE_CODE_BOOLEAN:
             return V3.serialize_boolean(obj)
-        if code == V3Type.TYPE_CODE_BIG_INTEGER:
+        if code == V3Type.TYPE_CODE_INTEGER:
             return V3.serialize_integer(v3_type, obj)
         if code == V3Type.TYPE_CODE_ARRAY:
             return V3.serialize_array(v3_type, obj)
@@ -104,7 +105,7 @@ class V3:
         code = v3_type.typeCode
         if code == V3Type.TYPE_CODE_BOOLEAN:
             return V3.deserialize_boolean(sequence_iterator)
-        if code == V3Type.TYPE_CODE_BIG_INTEGER:
+        if code == V3Type.TYPE_CODE_INTEGER:
             return V3.deserialize_integer(v3_type, sequence_iterator)
         if code == V3Type.TYPE_CODE_ARRAY:
             return V3.deserialize_array(v3_type, sequence_iterator)
@@ -157,10 +158,27 @@ class V3:
 
     @staticmethod
     def serialize_array(v3_type, arr):
-        if v3_type.elementType.typeCode == 9:
+        if v3_type.elementType.typeCode == V3Type.TYPE_CODE_BYTE:
             the_bytes = bytes(arr, 'utf-8') if v3_type.isString else arr
             V3.validate_length(v3_type.arrayLen, len(the_bytes))
             return the_bytes
+        elif v3_type.elementType.typeCode == V3Type.TYPE_CODE_INTEGER:
+            return V3.serialize_integer_array(v3_type, arr)
+        return V3.serialize_object_array(v3_type, arr)
+
+    @staticmethod
+    def deserialize_array(v3_type, sequence_iterator):
+        if v3_type.elementType.typeCode == V3Type.TYPE_CODE_BYTE:
+            the_bytes = sequence_iterator.next().data()
+            if v3_type.isString:
+                return the_bytes.decode('utf-8')
+            return the_bytes
+        elif v3_type.elementType.typeCode == V3Type.TYPE_CODE_INTEGER:
+            return V3.deserialize_integer_array(v3_type, sequence_iterator.next())
+        return V3.deserialize_object_array(v3_type, sequence_iterator.next())
+
+    @staticmethod
+    def serialize_object_array(v3_type, arr):
         V3.validate_length(v3_type.arrayLen, len(arr))
         out = []
         for i in range(0, len(arr)):
@@ -168,16 +186,51 @@ class V3:
         return out
 
     @staticmethod
-    def deserialize_array(v3_type, sequence_iterator):
-        if v3_type.elementType.typeCode == 9:
-            the_bytes = sequence_iterator.next().data()
-            if v3_type.isString:
-                return the_bytes.decode('utf-8')
-            return the_bytes
-        list_item = sequence_iterator.next()
+    def deserialize_object_array(v3_type, list_item):
         elements = list_item.elements()
         list_iter = list_item.iterator()
         found = []
         for i in range(0, len(elements)):
             found.append(V3.deserialize(v3_type.elementType, list_iter))
         return found
+
+    @staticmethod
+    def serialize_integer_array(v3_type, arr):
+        V3.validate_length(v3_type.arrayLen, len(arr))
+        sequence_len = 0
+        for e in arr:
+            int_bytes = V3.serialize_integer(v3_type.elementType, e)
+            sequence_len += RLPEncoder.encoded_len(int_bytes)
+            if sequence_len >= 56:
+                return V3.serialize_large_integer_array(v3_type, arr)
+        return V3.serialize_object_array(v3_type, arr)
+
+    @staticmethod
+    def deserialize_integer_array(v3_type, arr):
+        return V3.deserialize_large_integer_array(v3_type, arr) if arr.dataLength >= 56 else V3.deserialize_object_array(v3_type, arr)
+
+    @staticmethod
+    def serialize_large_integer_array(v3_type, arr):
+        element_len = v3_type.elementType.bitLen // 8
+        buf_len = element_len * len(arr)
+        buf = ByteBuffer.allocate(buf_len)
+        for e in arr:
+            int_bytes = V3.serialize_integer(v3_type.elementType, e)
+            pad_len = element_len - len(int_bytes)
+            for i in range(0, pad_len):
+                buf.put(0)
+            buf.put(int_bytes)
+        buf.rewind()
+        return buf.array(buf_len)
+
+    @staticmethod
+    def deserialize_large_integer_array(v3_type, arr):
+        element_len = v3_type.elementType.bitLen // 8
+        result_len = arr.dataLength // element_len
+        result = []
+        pos = arr.dataIndex
+        for i in range(0, result_len):
+            chunk = arr.buffer[pos: pos + element_len: 1]
+            result.append(int.from_bytes(chunk, byteorder="big"))
+            pos = pos + element_len
+        return result
