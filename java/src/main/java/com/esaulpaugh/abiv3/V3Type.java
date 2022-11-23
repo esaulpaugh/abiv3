@@ -15,7 +15,11 @@
 */
 package com.esaulpaugh.abiv3;
 
+import java.math.BigInteger;
+
 public final class V3Type {
+
+    private static final ClassLoader CLASS_LOADER = Thread.currentThread().getContextClassLoader();
 
     public static final int TYPE_CODE_BOOLEAN = 0;
     public static final int TYPE_CODE_BIG_INTEGER = 1;
@@ -28,8 +32,10 @@ public final class V3Type {
     final String canonicalType;
 
     final Integer arrayLen; // if an array type
+
+    final Class<?> clazz;
     final V3Type elementType;
-    final Class<?> elementClass;
+    final Class<?> arrayClass;
     final boolean isString;
 
     final Boolean unsigned; // if a number type
@@ -38,29 +44,37 @@ public final class V3Type {
 
     final V3Type[] elementTypes; // if a tuple type
 
-    V3Type(String canonicalType, Integer arrayLen, V3Type elementType, Class<?> elementClass, boolean isString) {
-        this(canonicalType, TYPE_CODE_ARRAY, arrayLen, elementType, elementClass, isString, null, null, null, null);
+    public final Class<?> arrayClass() {
+        if(arrayClass != null) {
+            return arrayClass;
+        }
+        try {
+            return Class.forName('[' + clazz.getName(), false, CLASS_LOADER);
+        } catch (ClassNotFoundException cnfe) {
+            throw new AssertionError(cnfe);
+        }
+    }
+
+    V3Type(String canonicalType, Integer arrayLen, Class<?> clazz, Class<?> arrayClass, V3Type elementType, boolean isString) {
+        this(canonicalType, TYPE_CODE_ARRAY, arrayLen, clazz, arrayClass, elementType, isString, null, null, null, null);
     }
 
     V3Type(String canonicalType, Boolean unsigned, Integer bitLen) {
-        this(canonicalType, TYPE_CODE_BIG_INTEGER, null, null, null, null, unsigned, bitLen, null, null);
-    }
-
-    V3Type(String canonicalType, Boolean unsigned, Integer bitLen, Integer scale) {
-        this(canonicalType, TYPE_CODE_BIG_INTEGER, null, null, null, null, unsigned, bitLen, scale, null);
+        this(canonicalType, TYPE_CODE_BIG_INTEGER, null, BigInteger.class, BigInteger[].class, null, null, unsigned, bitLen, null, null);
     }
 
     V3Type(String canonicalType, V3Type[] elementTypes) {
-        this(canonicalType, V3Type.TYPE_CODE_TUPLE, null, null, null, null, null, null, null, elementTypes);
+        this(canonicalType, V3Type.TYPE_CODE_TUPLE, null, Object[].class, Object[][].class, null, null, null, null, null, elementTypes);
     }
 
-    private V3Type(String canonicalType, int typeCode, Integer arrayLen, V3Type elementType, Class<?> elementClass,
+    private V3Type(String canonicalType, int typeCode, Integer arrayLen, Class<?> clazz, Class<?> arrayClass, V3Type elementType,
                    Boolean isString, Boolean unsigned, Integer bitLen, Integer scale,
                    V3Type[] elementTypes) {
         this.canonicalType = canonicalType;
         this.typeCode = typeCode;
         this.arrayLen = arrayLen;
-        this.elementClass = elementClass;
+        this.clazz = clazz;
+        this.arrayClass = arrayClass;
         this.elementType = elementType;
         this.isString = isString != null && isString;
         this.unsigned = unsigned;
@@ -70,16 +84,16 @@ public final class V3Type {
     }
 
     static final V3Type BYTE = new V3Type("-BYTE-", TYPE_CODE_BYTE,
-            null, null, null, null,
+            null, Byte.class, Byte[].class, null, null,
             false, 8, null, null);
 
-    static final V3Type STRING = new V3Type("string", -1, BYTE, Byte.class, true);
+    static final V3Type STRING = new V3Type("string", -1, String.class, String[].class, BYTE, true);
 
     static final V3Type BOOL = new V3Type("bool", TYPE_CODE_BOOLEAN,
-            null, null, null, null,
+            null, Boolean.class, Boolean[].class, null, null,
             true, 1, null, null);
 
     static final V3Type ADDRESS = new V3Type("address", true, 160);
 
-    static final V3Type FUNCTION = new V3Type("function", 24, BYTE, Byte.class, false);
+    static final V3Type FUNCTION = new V3Type("function", 24, Byte.class, Byte[].class, BYTE, false);
 }

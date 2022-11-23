@@ -18,7 +18,6 @@ package com.esaulpaugh.abiv3;
 import com.joemelsha.crypto.hash.Keccak;
 
 import java.lang.reflect.Array;
-import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -336,7 +335,7 @@ public final class V3 {
             listSeqIter.next();
             numElements--;
         }
-        final Object[] in = (Object[]) Array.newInstance(type.elementClass, numElements); // reflection
+        final Object[] in = (Object[]) Array.newInstance(type.elementType.clazz, numElements); // reflection
         for (int i = 0; i < in.length; i++) {
             in[i] = deserialize(type.elementType, listSeqIter);
         }

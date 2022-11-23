@@ -15,7 +15,6 @@
 */
 package com.esaulpaugh.abiv3;
 
-import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Random;
@@ -24,43 +23,36 @@ public final class Main {
 
     private static final Random RANDOM = new Random();
 
-    static final V3Type DYN_ARR_OF_BOOL = new V3Type("bool[]", -1, V3Type.BOOL, boolean.class, false);
-    static final V3Type ARR_0_OF_BOOL = new V3Type("bool[0]", 0, V3Type.BOOL, boolean.class, false);
-    static final V3Type ARR_8_OF_BOOL = new V3Type("bool[8]", 8, V3Type.BOOL, boolean.class, false);
-
-    static final V3Type UINT72 = new V3Type("uint72", true, 72);
-    static final V3Type INT16 = new V3Type("int16", false, 16);
-    static final V3Type DYN_ARR_OF_UINT72 = new V3Type("uint72[]", -1, UINT72, BigInteger.class, false);
-
-    static final V3Type FIXED_128x18 = new V3Type("fixed128x18", false, 128, 18);
-
-    static final V3Type DYN_ARRAY_OF_TUPLE_OF_DYN_ARR_OF_BOOL = new V3Type("(bool[])[]", -1, new V3Type("bool[]", new V3Type[] { DYN_ARR_OF_BOOL }), Object[].class, false);
-
-    static final V3Type DYN_ARR_OF_STRING = new V3Type("string[]", -1, V3Type.STRING, String.class, false);
-    static final V3Type STRING_ARRAY_ARRAY = new V3Type("string[][]", -1, DYN_ARR_OF_STRING, String[].class, false);
-
-    static final V3Type TUPLE_OF_STRING_BOOL_BOOL_UINT72 = new V3Type("(string,bool,bool,int72)", new V3Type[] { V3Type.STRING, V3Type.BOOL, V3Type.BOOL, UINT72 });
-    static final V3Type ARR_2_OF_TUPLE_OF_STRING_BOOL_BOOL_UINT72 = new V3Type("(string,bool,bool,int72)[2]", 2, TUPLE_OF_STRING_BOOL_BOOL_UINT72, Object[].class, false);
-
-    static final V3Type TUPLE_OF_FUNCTION_BYTES_AND_TUPLE_OF_INT_16_AND_BYTES = new V3Type(
-            "(function,bytes,(int16,bytes))",
-            new V3Type[] {
-                V3Type.FUNCTION,
-                new V3Type("bytes", -1, V3Type.BYTE, Byte.class, false),
-                new V3Type("(int16,bytes)", new V3Type[] {
-                        INT16,
-                        new V3Type("bytes", -1, V3Type.BYTE, Byte.class, false)
-            })
-    });
-
-    static final V3Type TUPLE_OF_ADDRESS = new V3Type("(address)", new V3Type[] { V3Type.ADDRESS });
-    static final V3Type TUPLE_OF_ADDRESS_ADDRESS = new V3Type("(address,address)", new V3Type[] { V3Type.ADDRESS, V3Type.ADDRESS });
-
     static int caseNumber = 0;
 
     public static void main(String[] args) {
 
         System.out.println("#\t\t\tfn#\t\tSignature\t\tCalldata example");
+
+        testSingle("(address,uint256,uint256,address,address,address,uint256,uint256,uint8,uint256,uint256,bytes32,uint256,bytes32,bytes32,uint256,(uint256,address)[],bytes)",
+                new Object[] {
+                    BigInteger.ZERO,
+                    BigInteger.ZERO,
+                    new BigInteger("54600000000000000"),
+                    new BigInteger("19375beb75fb14ce2ed58b684dc286f402721c69", 16),
+                    new BigInteger("003C00500000aD104D7DBd00e3ae0A5C00560b00", 16),
+                    new BigInteger("68e5d4ff0274dd95760e300ef16b81c5eed09833", 16),
+                    BigInteger.valueOf(3833L),
+                    BigInteger.valueOf(1L),
+                    BigInteger.valueOf(2L),
+                    BigInteger.valueOf(1669168117L),
+                    BigInteger.valueOf(1671760117L),
+                    new byte[32],
+                    new BigInteger("24446860302761739304752683030156737591518664810215442929806760874570849832304"),
+                    new byte[] { 0, 0, 0, 123, 2, 35, 0, -111, -89, -19, 1, 35, 0, 114, -9, 0, 106, 0, 77, 96, -88, -44, -25, 29, 89, -101, -127, 4, 37, 15, 0, 0 },
+                    new byte[] { 0, 0, 0, 123, 2, 35, 0, -111, -89, -19, 1, 35, 0, 114, -9, 0, 106, 0, 77, 96, -88, -44, -25, 29, 89, -101, -127, 4, 37, 15, 0, 0 },
+                    BigInteger.valueOf(1L),
+                    new Object[] {
+                            new Object[] { new BigInteger("1400000000000000"), new BigInteger("0000b26b00c1f0df003000390027140000faa610", 16) }
+                    },
+                    new byte[] { 54, -22, -107, 33, 104, 23, -44, 109, -110, 91, -21, -93, 40, 62, 4, -102, -46, -69, -7, 21, 17, -87, 124, -45, -114, -92, -74, -8, -32, -70, 15, 113, 80, 64, 94, -100, -119, -53, -93, 125, -89, -34, 17, -126, -123, 119, -39, -97, 84, -101, 81, 0, -77, 92, 68, -1, 93, 120, -39, -23, 53, 30, 53, 69, 28 }
+                }
+        );
 
         final BigInteger[] bigInts = new BigInteger[] {
                 BigInteger.valueOf(2L),
@@ -78,69 +70,75 @@ public final class Main {
                 new BigInteger("65535")
         };
 
-        testSingle(DYN_ARR_OF_UINT72, bigInts);
+        testSingle("uint72[]", bigInts);
 
         bigInts[bigInts.length - 1] = new BigInteger("65536");
-        testSingle(DYN_ARR_OF_UINT72, bigInts);
+        testSingle("uint72[]", bigInts);
 
-        testSingle(new V3Type("bool[12]", 12, V3Type.BOOL, boolean.class, false),
+        testSingle("bool[12]",
                 new boolean[] { false, false, false, false, false, true, true, true, true, true, true, true });
 
-        testSingle(ARR_0_OF_BOOL, new boolean[] { });
-        testSingle(ARR_8_OF_BOOL, new boolean[] { true, true, true, true, true, true, true, true });
+        testSingle("bool[0]", new boolean[] { });
+        testSingle("bool[8]", new boolean[] { true, true, true, true, true, true, true, true });
 
-        testSingle(DYN_ARR_OF_BOOL, new boolean[] { });
-        testSingle(DYN_ARR_OF_BOOL, new boolean[] { false, false, true });
+        testSingle("bool[]", new boolean[] { });
+        testSingle("bool[]", new boolean[] { false, false, true });
 
-        testSingle(UINT72, BigInteger.TEN);
-        testSingle(DYN_ARR_OF_UINT72, new BigInteger[] { BigInteger.valueOf(2L), BigInteger.ZERO });
+        testSingle("uint72", BigInteger.TEN);
+        testSingle("uint72[]", new BigInteger[] { BigInteger.valueOf(2L), BigInteger.ZERO });
 
-        testSingle(V3Type.STRING, "abcd");
-        test(new V3Type[] { V3Type.STRING, V3Type.STRING }, "abcd", "efg");
-        testSingle(DYN_ARR_OF_STRING, new String[] { "abcd", "efg" });
-        testSingle(STRING_ARRAY_ARRAY, new String[][] { new String[] { "abcd", "efg" } });
+        testSingle("string", "abcd");
+        testSingle("(string,string)", new Object[] { "abcd", "efg" });
+        testSingle("string[]", new String[] { "abcd", "efg" });
+        testSingle("string[][]", new String[][] { new String[] { "abcd", "efg" } });
         testSingle(V3Type.FUNCTION, new byte[] { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23 });
 
         testSingle(
-                DYN_ARRAY_OF_TUPLE_OF_DYN_ARR_OF_BOOL,
+                "(bool[])[]",
                 new Object[] {
                     new Object[] { new boolean[] { true, false, false } },
                     new Object[] { new boolean[] { true, true, true } }
                 }
         );
 
-        test(
-                new V3Type[] { FIXED_128x18, FIXED_128x18 },
-                BigInteger.TEN, BigInteger.valueOf(125_000L)
+        testSingle(
+                "(fixed128x18,fixed128x18)",
+                new Object[] { BigInteger.TEN, BigInteger.valueOf(125_000L) }
         );
 
         test(
-                new V3Type[] { ARR_2_OF_TUPLE_OF_STRING_BOOL_BOOL_UINT72, new V3Type("uint8", true, 8) },
+                new V3Type[] { TypeFactory.create("(string,bool,bool,int72)[2]"), new V3Type("uint8", true, 8) },
                 new Object[] { new Object[] { "A", false, true, BigInteger.TEN }, new Object[] { "B", true, false, BigInteger.ONE } },
                 BigInteger.valueOf(255L)
         );
 
-        test(
-                new V3Type[] { TUPLE_OF_FUNCTION_BYTES_AND_TUPLE_OF_INT_16_AND_BYTES, V3Type.STRING },
+        testSingle(
+                "((function,bytes,(int16,bytes)),string)",
                 new Object[] {
-                        new byte[24],
-                        new byte[] { -5, 4 },
                         new Object[] {
-                                BigInteger.valueOf(-10L),
-                                new byte[] { 0, 1, 3, 5, 7, 10, -1 }
-                        }
-                },
-                "Oi!"
+                                new byte[24],
+                                new byte[] { -5, 4 },
+                                new Object[] {
+                                        BigInteger.valueOf(-10L),
+                                        new byte[] { 0, 1, 3, 5, 7, 10, -1 }
+                                }
+                        },
+                        "Oi!"
+                }
         );
 
         final BigInteger addr0 = new BigInteger("e102030405060708090a0b0c0d0e0f0f0f0f0f0d", 16);
         final BigInteger addr1 = new BigInteger("b1b2b3b4b5b6b7b8b90a0b0c0d0e0c0c0c0c0c0c", 16);
-        test(new V3Type[] { V3Type.ADDRESS, INT16 }, addr0, BigInteger.valueOf(-2L));
+        test(new V3Type[] { V3Type.ADDRESS, TypeFactory.create("int16") }, addr0, BigInteger.valueOf(-2L));
         test(
-                new V3Type[] { TUPLE_OF_ADDRESS, TUPLE_OF_ADDRESS_ADDRESS },
+                new V3Type[] { TypeFactory.create("(address)"), TypeFactory.create("(address,address)") },
                 new Object[] { addr0 },
                 new Object[] { addr1, addr0 }
         );
+    }
+
+    private static void testSingle(String typeStr, Object value) {
+        test(new V3Type[] { TypeFactory.create(typeStr) }, value);
     }
 
     private static void testSingle(V3Type type, Object value) {
