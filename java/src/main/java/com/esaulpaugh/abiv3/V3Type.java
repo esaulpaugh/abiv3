@@ -40,11 +40,10 @@ public final class V3Type {
 
     final Boolean unsigned; // if a number type
     final Integer bitLen;
-    final Integer scale;
 
     final V3Type[] elementTypes; // if a tuple type
 
-    public final Class<?> arrayClass() {
+    public Class<?> arrayClass() {
         if(arrayClass != null) {
             return arrayClass;
         }
@@ -56,20 +55,19 @@ public final class V3Type {
     }
 
     V3Type(String canonicalType, Integer arrayLen, Class<?> clazz, Class<?> arrayClass, V3Type elementType, boolean isString) {
-        this(canonicalType, TYPE_CODE_ARRAY, arrayLen, clazz, arrayClass, elementType, isString, null, null, null, null);
+        this(canonicalType, TYPE_CODE_ARRAY, arrayLen, clazz, arrayClass, elementType, isString, null, null, null);
     }
 
     V3Type(String canonicalType, Boolean unsigned, Integer bitLen) {
-        this(canonicalType, TYPE_CODE_BIG_INTEGER, null, BigInteger.class, BigInteger[].class, null, null, unsigned, bitLen, null, null);
+        this(canonicalType, TYPE_CODE_BIG_INTEGER, null, BigInteger.class, BigInteger[].class, null, null, unsigned, bitLen, null);
     }
 
     V3Type(String canonicalType, V3Type[] elementTypes) {
-        this(canonicalType, V3Type.TYPE_CODE_TUPLE, null, Object[].class, Object[][].class, null, null, null, null, null, elementTypes);
+        this(canonicalType, V3Type.TYPE_CODE_TUPLE, null, Object[].class, Object[][].class, null, null, null, null, elementTypes);
     }
 
     private V3Type(String canonicalType, int typeCode, Integer arrayLen, Class<?> clazz, Class<?> arrayClass, V3Type elementType,
-                   Boolean isString, Boolean unsigned, Integer bitLen, Integer scale,
-                   V3Type[] elementTypes) {
+                   Boolean isString, Boolean unsigned, Integer bitLen, V3Type[] elementTypes) {
         this.canonicalType = canonicalType;
         this.typeCode = typeCode;
         this.arrayLen = arrayLen;
@@ -79,19 +77,18 @@ public final class V3Type {
         this.isString = isString != null && isString;
         this.unsigned = unsigned;
         this.bitLen = bitLen;
-        this.scale = scale;
         this.elementTypes = elementTypes;
     }
 
     static final V3Type BYTE = new V3Type("-BYTE-", TYPE_CODE_BYTE,
             null, Byte.class, Byte[].class, null, null,
-            false, 8, null, null);
+            false, 8, null);
 
     static final V3Type STRING = new V3Type("string", -1, String.class, String[].class, BYTE, true);
 
     static final V3Type BOOL = new V3Type("bool", TYPE_CODE_BOOLEAN,
             null, Boolean.class, Boolean[].class, null, null,
-            true, 1, null, null);
+            true, 1, null);
 
     static final V3Type ADDRESS = new V3Type("address", true, 160);
 
