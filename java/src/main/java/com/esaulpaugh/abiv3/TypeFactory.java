@@ -100,10 +100,6 @@ public final class TypeFactory {
 
     private static int parseLen(String lenStr) {
         try {
-//            final char first = rawType.charAt(start);
-//            if(leadDigitValid(first) || (first == '0' && end - start == 1)) {
-//                return Integer.parseInt(rawType, start, end, 10); // Java 9+
-//            }
             if(leadDigitValid(lenStr.charAt(0)) || "0".equals(lenStr)) {
                 return Integer.parseInt(lenStr);
             }
@@ -153,7 +149,6 @@ public final class TypeFactory {
         final List<V3Type> elements = new ArrayList<>();
         int argEnd = 1;
         final StringBuilder canonicalBuilder = new StringBuilder("(");
-        boolean dynamic = false;
         try {
             do {
                 final int argStart = argEnd;
@@ -165,7 +160,6 @@ public final class TypeFactory {
                 }
                 final V3Type e = build(rawTypeStr.substring(argStart, argEnd), null);
                 canonicalBuilder.append(e.canonicalType).append(',');
-//                dynamic |= e.dynamic;
                 elements.add(e);
             } while (rawTypeStr.charAt(argEnd++) != ')');
         } catch (IllegalArgumentException iae) {
