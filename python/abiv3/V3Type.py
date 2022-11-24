@@ -38,7 +38,6 @@ class V3Type:
             is_string=None,
             unsigned=None,
             bit_len=None,
-            scale=None,
             element_types=None):
         self.typeCode = type_code
         self.canonicalType = canonical_type
@@ -48,15 +47,14 @@ class V3Type:
         self.isString = is_string
         self.unsigned = unsigned
         self.bitLen = bit_len
-        self.scale = scale
         self.elementTypes = element_types
 
 
-V3Type.BOOL = V3Type(V3Type.TYPE_CODE_BOOLEAN, 'bool', None, None, None, False, True, 1, None, None)
-V3Type.UINT72 = V3Type(V3Type.TYPE_CODE_INTEGER, 'uint72', None, None, None, False, True, 72, None, None)
-V3Type.BYTE = V3Type(V3Type.TYPE_CODE_BYTE, '--byte--', None, None, None, False, True, 8, None, None)
-V3Type.BYTES = V3Type(V3Type.TYPE_CODE_ARRAY, 'bytes', -1, V3Type.BYTE, int.__class__, False, None, None, None, None)
-V3Type.DYN_ARR_OF_UINT72 = V3Type(V3Type.TYPE_CODE_ARRAY, 'uint72[]', -1, V3Type.UINT72, int.__class__, False, None, None, None, None)
-V3Type.UINT72_ARRAY_3 = V3Type(V3Type.TYPE_CODE_ARRAY, 'uint72[3]', 3, V3Type.UINT72, int.__class__, False, None, None, None, None)
-V3Type.UFIXED_128_X_18 = V3Type(V3Type.TYPE_CODE_INTEGER, 'ufixed128x18', None, None, None, False, True, 128, None, None)
-V3Type.TUPLE_BOOL_UINT72 = V3Type(V3Type.TYPE_CODE_TUPLE, '(bool,int256)', None, None, None, False, None, None, None, [V3Type.BOOL, V3Type.UINT72])
+V3Type.BOOL = V3Type(V3Type.TYPE_CODE_BOOLEAN, 'bool', None, None, None, False, True, 1, None)
+V3Type.UINT72 = V3Type(V3Type.TYPE_CODE_INTEGER, 'uint72', None, None, None, False, True, 72, None)
+V3Type.BYTE = V3Type(V3Type.TYPE_CODE_BYTE, '--byte--', None, None, None, False, True, 8, None)
+V3Type.BYTES = V3Type(V3Type.TYPE_CODE_ARRAY, 'bytes', -1, V3Type.BYTE, int.__class__, False, None, None, None)
+V3Type.DYN_ARR_OF_UINT72 = V3Type(V3Type.TYPE_CODE_ARRAY, 'uint72[]', -1, V3Type.UINT72, int.__class__, False, None, None, None)
+V3Type.UINT72_ARRAY_3 = V3Type(V3Type.TYPE_CODE_ARRAY, 'uint72[3]', 3, V3Type.UINT72, int.__class__, False, None, None, None)
+V3Type.UFIXED_128_X_18 = V3Type(V3Type.TYPE_CODE_INTEGER, 'ufixed128x18', None, None, None, False, True, 128, None)
+V3Type.TUPLE_BOOL_UINT72 = V3Type(V3Type.TYPE_CODE_TUPLE, '(bool,int256)', None, None, None, False, None, None, [V3Type.BOOL, V3Type.UINT72])

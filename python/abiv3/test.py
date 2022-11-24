@@ -18,6 +18,7 @@ from PyByteBuffer import ByteBuffer
 from abiv3 import Utils
 from abiv3.RLPEncoder import RLPEncoder
 from abiv3.RLPItem import RLPItem
+from abiv3.TypeFactory import TypeFactory
 from abiv3.V3 import V3
 from abiv3.V3Type import V3Type
 
@@ -46,6 +47,9 @@ from abiv3.V3Type import V3Type
 
 # schema = [V3Type.BOOL, V3Type.INT256, V3Type.BYTES, V3Type.INT256_ARRAY_3, V3Type.UFIXED_128_X_18]
 # objects = [True, 5, b'\x03\x09', [10, -16777215, 0], -10.9]  # TODO decimals
+
+addr = TypeFactory.typeMap['uint8']
+print(addr.canonicalType)
 
 schema = [V3Type.DYN_ARR_OF_UINT72]
 ints = [
