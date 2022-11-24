@@ -180,16 +180,13 @@ class V3:
     @staticmethod
     def serialize_integer_array(v3_type, arr):
         V3.validate_length(v3_type.arrayLen, len(arr))
-        sequence_len = 0
         max_raw_len = 0
         for e in arr:
             int_bytes = V3.serialize_integer(v3_type.elementType, e)
-            sequence_len += RLPEncoder.encoded_len(int_bytes)
             if len(int_bytes) > max_raw_len:
                 max_raw_len = len(int_bytes)
-        var_width = V3.serialize_object_array(v3_type, arr, 1)
-        var_width[0] = b'0x00'
-        var_width_len = RLPEncoder.sum_encoded_len(var_width)
+        var_width = V3.serialize_object_array(v3_type, arr, b'0x00')
+        var_width_len = RLPEncoder.sum_encoded_len(var_width) + 1
         fixed_width = V3.serialize_large_integer_array(v3_type, arr, max_raw_len)
         return var_width if var_width_len < len(fixed_width) else fixed_width
 
@@ -202,8 +199,8 @@ class V3:
 
     @staticmethod
     def serialize_large_integer_array(v3_type, arr, byte_width):
-        buf_len = byte_width * len(arr)
-        buf = ByteBuffer.allocate(1 + buf_len)
+        buf_len = 1 + byte_width * len(arr)
+        buf = ByteBuffer.allocate(buf_len)
         buf.put(byte_width)
         for e in arr:
             int_bytes = V3.serialize_integer(v3_type.elementType, e)
