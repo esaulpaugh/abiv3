@@ -131,17 +131,17 @@ class TypeFactory:
             m_str = base_type_str[begin: index_of_x]
             n_str = base_type_str[index_of_x + 1:]
             if lead_digit_valid(m_str[0]) and lead_digit_valid(n_str[0]):
-                M = int(m_str)
-                N = int(n_str)
-                if M % 8 == 0 and M <= 256 and N <= 80:
+                m = int(m_str)
+                n = int(n_str)
+                if m % 8 == 0 and m <= 256 and n <= 80:
                     return V3Type(
                         V3Type.TYPE_CODE_INTEGER,
-                        ("ufixed" if unsigned else "fixed") + str(M) + 'x' + str(N),
+                        ("ufixed" if unsigned else "fixed") + str(m) + 'x' + str(n),
                         None,
                         None,
                         False,
                         unsigned,
-                        M,
+                        m,
                         None
                     )
         return None
