@@ -50,10 +50,10 @@ public final class TypeFactory {
             mapByteArray("bytes" + n, n);
         }
 
-        BASE_TYPE_MAP.put("address", ADDRESS);
+        mapBigInteger("address", true, 160);
         mapByteArray("function", FUNCTION_BYTE_LEN);
         mapByteArray("bytes", -1);
-        BASE_TYPE_MAP.put("string", STRING);
+        BASE_TYPE_MAP.put("string", new V3Type("string", -1, String.class, String[].class, BYTE, true));
         BASE_TYPE_MAP.put("bool", BOOL);
     }
 

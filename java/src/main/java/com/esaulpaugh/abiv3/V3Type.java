@@ -84,13 +84,7 @@ public final class V3Type {
             null, Byte.class, Byte[].class, null, null,
             false, 8, null);
 
-    static final V3Type STRING = new V3Type("string", -1, String.class, String[].class, BYTE, true);
-
     static final V3Type BOOL = new V3Type("bool", TYPE_CODE_BOOLEAN,
             null, Boolean.class, Boolean[].class, null, null,
             true, 1, null);
-
-    static final V3Type ADDRESS = new V3Type("address", true, 160);
-
-    static final V3Type FUNCTION = new V3Type("function", 24, Byte.class, Byte[].class, BYTE, false);
 }

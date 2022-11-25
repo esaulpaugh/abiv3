@@ -91,7 +91,7 @@ public final class Main {
         testSingle("(string,string)", new Object[] { "abcd", "efg" });
         testSingle("string[]", new String[] { "abcd", "efg" });
         testSingle("string[][]", new String[][] { new String[] { "abcd", "efg" } });
-        testSingle(V3Type.FUNCTION, new byte[] { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23 });
+        testSingle("function", new byte[] { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23 });
 
         testSingle(
                 "(bool[])[]",
@@ -129,7 +129,7 @@ public final class Main {
 
         final BigInteger addr0 = new BigInteger("e102030405060708090a0b0c0d0e0f0f0f0f0f0d", 16);
         final BigInteger addr1 = new BigInteger("b1b2b3b4b5b6b7b8b90a0b0c0d0e0c0c0c0c0c0c", 16);
-        test(new V3Type[] { V3Type.ADDRESS, TypeFactory.create("int16") }, addr0, BigInteger.valueOf(-2L));
+        test(new V3Type[] { TypeFactory.create("address"), TypeFactory.create("int16") }, addr0, BigInteger.valueOf(-2L));
         test(
                 new V3Type[] { TypeFactory.create("(address)"), TypeFactory.create("(address,address)") },
                 new Object[] { addr0 },
