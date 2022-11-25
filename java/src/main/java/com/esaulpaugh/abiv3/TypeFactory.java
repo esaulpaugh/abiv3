@@ -41,8 +41,10 @@ public final class TypeFactory {
     static {
         BASE_TYPE_MAP = new HashMap<>(256);
 
-        for(int n = 8; n <= 256; n += 8) mapBigInteger("int" + n, false, n);
-        for(int n = 8; n <= 256; n += 8) mapBigInteger("uint" + n, true, n);
+        for(int n = 8; n <= 256; n += 8) {
+            mapBigInteger("int" + n, false, n);
+            mapBigInteger("uint" + n, true, n);
+        }
 
         for (int n = 1; n <= 32; n++) {
             mapByteArray("bytes" + n, n);
@@ -52,14 +54,6 @@ public final class TypeFactory {
         mapByteArray("function", FUNCTION_BYTE_LEN);
         mapByteArray("bytes", -1);
         BASE_TYPE_MAP.put("string", STRING);
-
-        BASE_TYPE_MAP.put("decimal", BASE_TYPE_MAP.get("fixed168x10"));
-
-        BASE_TYPE_MAP.put("int", BASE_TYPE_MAP.get("int256"));
-        BASE_TYPE_MAP.put("uint", BASE_TYPE_MAP.get("uint256"));
-        BASE_TYPE_MAP.put("fixed", BASE_TYPE_MAP.get("fixed128x18"));
-        BASE_TYPE_MAP.put("ufixed", BASE_TYPE_MAP.get("ufixed128x18"));
-
         BASE_TYPE_MAP.put("bool", BOOL);
     }
 
