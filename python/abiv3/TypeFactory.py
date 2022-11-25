@@ -31,9 +31,13 @@ def next_terminator(signature, i):
             return i
 
 
-def last_index_of(string, char, start):
-    for i in range(start, 0, -1):
-        if string[i] == char:
+def last_index(string, ch):
+    return last_index_from(string, ch, len(string) - 1)
+
+
+def last_index_from(string, ch, from_index):
+    for i in range(from_index, 0, -1):
+        if string[i] == ch:
             return i
     return -1
 
@@ -79,7 +83,7 @@ class TypeFactory:
         last_char_idx = len(raw_type) - 1
         if raw_type[last_char_idx] == ']':  # array
             second_to_last_char_idx = last_char_idx - 1
-            array_open_index = last_index_of(raw_type, '[', second_to_last_char_idx)
+            array_open_index = last_index_from(raw_type, '[', second_to_last_char_idx)
             element_type = TypeFactory.build(raw_type[:array_open_index], base_type)
             the_type = element_type.canonicalType + raw_type[array_open_index:]
             length = -1 if array_open_index == second_to_last_char_idx else parse_len(raw_type[array_open_index + 1: last_char_idx])
@@ -94,7 +98,8 @@ class TypeFactory:
     @staticmethod
     def parse_tuple_type(raw_type_str):
         the_len = len(raw_type_str)
-        if the_len == 2 and raw_type_str == "()": return V3Type(V3Type.TYPE_CODE_TUPLE, "()", None, None, False, None, None, [])
+        if the_len == 2 and raw_type_str == "()":
+            return V3Type(V3Type.TYPE_CODE_TUPLE, "()", None, None, False, None, None, [])
         elements = []
         arg_end = 1
         canonical_builder = "("
@@ -121,7 +126,7 @@ class TypeFactory:
         idx = base_type_str.index("fixed")
         unsigned = idx == 1 and base_type_str[0] == 'u'
         if idx == 0 or unsigned:
-            index_of_x = (len(base_type_str) - 1) - base_type_str[::-1].index('x')
+            index_of_x = last_index(base_type_str, 'x')
             begin = idx + len("fixed")
             m_str = base_type_str[begin: index_of_x]
             n_str = base_type_str[index_of_x + 1:]
