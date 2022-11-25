@@ -48,8 +48,22 @@ from abiv3.V3Type import V3Type
 # schema = [V3Type.BOOL, V3Type.INT256, V3Type.BYTES, V3Type.INT256_ARRAY_3, V3Type.UFIXED_128_X_18]
 # objects = [True, 5, b'\x03\x09', [10, -16777215, 0], -10.9]  # TODO decimals
 
-addr = TypeFactory.typeMap['uint8']
-print(addr.canonicalType)
+
+
+int_val = 10
+
+print(int_val.__class__)
+print(type(int_val))
+
+dec = TypeFactory.create("()")
+print(dec.canonicalType)
+
+dec = TypeFactory.create("(fixed128x3)[]")
+print(dec.canonicalType)
+
+
+addr = TypeFactory.create('int32')
+print(addr.bitLen)
 
 schema = [V3Type.DYN_ARR_OF_UINT72]
 ints = [
