@@ -82,9 +82,8 @@ public final class RLPEncoder {
             if(holder.dataBytes != null) putString(holder.dataBytes, bb);
         } else if(raw == null) {
             // skip
-        } else {
-            throw new IllegalArgumentException();
         }
+        throw new IllegalArgumentException();
     }
 
     /**

@@ -75,8 +75,7 @@ public final class Main {
         bigInts[bigInts.length - 1] = new BigInteger("65536");
         testSingle("uint72[]", bigInts);
 
-        testSingle("bool[12]",
-                new boolean[] { false, false, false, false, false, true, true, true, true, true, true, true });
+        testSingle("bool[12]", new boolean[] { false, false, false, false, false, true, true, true, true, true, true, true });
 
         testSingle("bool[0]", new boolean[] { });
         testSingle("bool[8]", new boolean[] { true, true, true, true, true, true, true, true });

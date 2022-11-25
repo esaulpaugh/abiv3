@@ -61,10 +61,18 @@ print(dec.canonicalType)
 dec = TypeFactory.create("(fixed128x3)[]")
 print(dec.canonicalType)
 
-dec = TypeFactory.create("bool[][200]")
+bool_type = TypeFactory.create("bool")
+
+rlp = V3.to_rlp(1, [bool_type], [True])
+valz = V3.from_rlp([bool_type], rlp)
+
+dec = TypeFactory.create("bool[5]")
 print(dec.canonicalType)
 print(dec.elementType.canonicalType)
-print(dec.elementType.elementType.canonicalType)
+# print(dec.elementType.elementType.canonicalType)
+
+rlp = V3.to_rlp(1, [dec], [[False, False, False, True, False]])
+valz = V3.from_rlp([dec], rlp)
 
 addr = TypeFactory.create('int32')
 print(addr.bitLen)

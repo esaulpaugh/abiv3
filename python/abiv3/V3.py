@@ -14,7 +14,7 @@
 from PyByteBuffer import ByteBuffer
 
 from abiv3 import Utils
-from abiv3.RLPEncoder import RLPEncoder
+from abiv3.RLPEncoder import RLPEncoder, DynamicBoolArray
 from abiv3.RLPIterator import RLPIterator
 from abiv3.V3Type import V3Type
 
@@ -162,9 +162,11 @@ class V3:
             the_bytes = bytes(arr, 'utf-8') if v3_type.isString else arr
             V3.validate_length(v3_type.arrayLen, len(the_bytes))
             return the_bytes
+        elif v3_type.elementType.typeCode == V3Type.TYPE_CODE_BOOLEAN:
+            return V3.serialize_boolean_array(v3_type, arr)
         elif v3_type.elementType.typeCode == V3Type.TYPE_CODE_INTEGER:
             return V3.serialize_integer_array(v3_type, arr)
-        return V3.serialize_object_array(v3_type, arr, 0)
+        return V3.serialize_object_array(v3_type, arr, b'')
 
     @staticmethod
     def deserialize_array(v3_type, sequence_iterator):
@@ -173,9 +175,37 @@ class V3:
             if v3_type.isString:
                 return the_bytes.decode('utf-8')
             return the_bytes
+        elif v3_type.elementType.typeCode == V3Type.TYPE_CODE_BOOLEAN:
+            return V3.deserialize_boolean_array(v3_type, sequence_iterator)
         elif v3_type.elementType.typeCode == V3Type.TYPE_CODE_INTEGER:
             return V3.deserialize_integer_array(v3_type, sequence_iterator.next())
         return V3.deserialize_object_array(v3_type, sequence_iterator.next(), False)
+
+    @staticmethod
+    def serialize_boolean_array(v3_type, booleans):
+        V3.validate_length(v3_type.arrayLen, len(booleans))
+        the_bytes = None
+        if len(booleans) > 0:
+            binary = '+'
+            for b in booleans:
+                binary = binary + ('1' if b else '0')
+            the_bytes = V3.serialize_integer(type, int(binary, 2))
+        return DynamicBoolArray(Utils.to_bytes_unsigned(len(booleans)), the_bytes) if v3_type.arrayLen == -1 else the_bytes
+
+    @staticmethod
+    def deserialize_boolean_array(v3_type, sequence_iterator):
+        the_len = sequence_iterator.next().as_int() if v3_type.arrayLen == -1 else v3_type.arrayLen
+        if the_len == 0:
+            return []
+        binary = bin(sequence_iterator.next().as_int())[2:]
+        num_chars = len(binary)
+        implied_zeros = the_len - num_chars
+        booleans = []
+        for c in range(0, implied_zeros):
+            booleans.append(False)
+        for c in range(0, num_chars):
+            booleans.append(True if binary[c] == '1' else False)
+        return booleans
 
     @staticmethod
     def serialize_integer_array(v3_type, arr):

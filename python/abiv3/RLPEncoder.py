@@ -42,6 +42,11 @@ class RLPEncoder:
             return RLPEncoder.str_encoded_len(e)
         if isinstance(e, list):
             return RLPEncoder.list_encoded_len(e)
+        if isinstance(e, DynamicBoolArray):
+            length_of_length = RLPEncoder.str_encoded_len(e.arrayLenBytes)
+            if e.dataBytes is None:
+                return length_of_length
+            return length_of_length + RLPEncoder.str_encoded_len(e.dataBytes)
         if e is None:
             return 0
         raise Exception('?')
@@ -95,6 +100,10 @@ class RLPEncoder:
             RLPEncoder.put_string(e, dest)
         elif isinstance(e, list):
             RLPEncoder.put_list(RLPEncoder.sum_encoded_len(e), e, dest)
+        elif isinstance(e, DynamicBoolArray):
+            RLPEncoder.put_string(e.arrayLenBytes, dest)
+            if e.dataBytes is not None:
+                RLPEncoder.put_string(e.dataBytes, dest)
         elif e is None:
             return  # skip
         else:
@@ -104,3 +113,10 @@ class RLPEncoder:
     def put_sequence(objects, dest):
         for e in objects:
             RLPEncoder.encode_item(e, dest)
+
+
+class DynamicBoolArray:
+
+    def __init__(self, array_len_bytes, data_bytes):
+        self.arrayLenBytes = array_len_bytes
+        self.dataBytes = data_bytes
