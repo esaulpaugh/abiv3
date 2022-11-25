@@ -32,11 +32,9 @@ def next_terminator(signature, i):
 
 
 def last_index_of(string, char, start):
-    i = start
-    while i >= 0:
+    for i in range(start, 0, -1):
         if string[i] == char:
             return i
-        i = i - 1
     return -1
 
 
