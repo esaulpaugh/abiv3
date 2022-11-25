@@ -151,7 +151,7 @@ public final class Main {
     private static void test(final int fnNumber, final V3Type[] schema, final Object... values) {
         final byte[] rlp = V3.toRLP(fnNumber, schema, values);
         String calldata = new BigInteger(1, rlp).toString(16);
-        if(calldata.length() % 2 == 1) {
+        if (calldata.length() % 2 == 1) {
             calldata = "0" + calldata;
         }
         System.out.println("case" + caseNumber++ + ":\t\t"
@@ -161,7 +161,7 @@ public final class Main {
                 + " (len " + rlp.length + ")");
         final Object[] decoded = V3.fromRLP(schema, rlp);
         final boolean eq = Arrays.deepEquals(values, decoded);
-        if(!eq) {
+        if (!eq) {
             throw new AssertionError(values + " != " + decoded);
         }
 //        System.out.println(value + " == " + decoded[0]);

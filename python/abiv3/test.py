@@ -49,7 +49,6 @@ from abiv3.V3Type import V3Type
 # objects = [True, 5, b'\x03\x09', [10, -16777215, 0], -10.9]  # TODO decimals
 
 
-
 int_val = 10
 
 print(int_val.__class__)
@@ -71,13 +70,13 @@ print(dec.canonicalType)
 print(dec.elementType.canonicalType)
 # print(dec.elementType.elementType.canonicalType)
 
-rlp = V3.to_rlp(1, [dec], [[False, False, False, True, False]])
+rlp = V3.to_rlp(1, [dec], [[True, False, False, True, False]])
 valz = V3.from_rlp([dec], rlp)
 
 addr = TypeFactory.create('int32')
 print(addr.bitLen)
 
-schema = [V3Type.DYN_ARR_OF_UINT72]
+schema = [TypeFactory.create("uint72[]")]
 ints = [
     2,
     0,

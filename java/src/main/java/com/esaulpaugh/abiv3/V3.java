@@ -43,7 +43,7 @@ public final class V3 {
     public static byte[] toRLP(int functionNumber, V3Type[] schema, Object[] vals) {
         List<Object> tuple = new ArrayList<>();
         byte[][] header = header(functionNumber);
-        if(header.length == 2) {
+        if (header.length == 2) {
             tuple.add(header[1]);
         }
         tuple.addAll(Arrays.asList(serializeTuple(schema, vals)));
@@ -56,25 +56,25 @@ public final class V3 {
     public static Object[] fromRLP(V3Type[] schema, byte[] rlp) {
         final byte zeroth = rlp[0];
         final int version = zeroth & 0b1110_0000;
-        if(version != V3_VERSION_ID) {
+        if (version != V3_VERSION_ID) {
             throw new IllegalArgumentException();
         }
         int sequenceStart = 1;
         int fnNumber = zeroth & 0b0001_1111;
-        if(fnNumber >= 31) {
+        if (fnNumber >= 31) {
             final RLPItem fnNumberItem = RLPItem.wrap(rlp, 1, rlp.length);
             fnNumber = fnNumberItem.asInt();
-            if(fnNumber < 31) throw new IllegalArgumentException();
+            if (fnNumber < 31) throw new IllegalArgumentException();
             sequenceStart = fnNumberItem.endIndex;
         }
         return deserializeTuple(schema, RLPItem.ABIv3Iterator.sequenceIterator(rlp, sequenceStart));
     }
 
     private static byte[][] header(int functionNumber) {
-        if(functionNumber < 0) throw new IllegalArgumentException();
+        if (functionNumber < 0) throw new IllegalArgumentException();
         final byte[] fnNumber = Integers.toBytes(functionNumber);
-        if(functionNumber < 31) {
-            if(functionNumber == 0) {
+        if (functionNumber < 31) {
+            if (functionNumber == 0) {
                 return new byte[][] { new byte[] { 0 } };
             }
             return new byte[][] { fnNumber };
@@ -94,7 +94,7 @@ public final class V3 {
     }
 
     public static String createSignature(String functionName, V3Type[] schema) {
-        if(schema.length == 0) {
+        if (schema.length == 0) {
             return functionName + "()";
         }
         StringBuilder sb = new StringBuilder(functionName);
@@ -107,7 +107,7 @@ public final class V3 {
 
     private static void checkSelector(byte[] expectedSelector, byte[] rlp) {
         for (int i = 0; i < expectedSelector.length; i++) {
-            if(rlp[i] != expectedSelector[i]) {
+            if (rlp[i] != expectedSelector[i]) {
                 throw new IllegalArgumentException("bad selector");
             }
         }
@@ -127,7 +127,7 @@ public final class V3 {
         for(int i = 0; i < elements.length; i++) {
             elements[i] = deserialize(tupleType[i], sequenceIterator);
         }
-        if(sequenceIterator.hasNext()) {
+        if (sequenceIterator.hasNext()) {
             throw new IllegalArgumentException("trailing unconsumed items");
         }
         return elements;
@@ -159,13 +159,13 @@ public final class V3 {
 
     private static Boolean deserializeBoolean(Iterator<RLPItem> sequenceIterator) {
         final String enc = sequenceIterator.next().asBigInt().toString(16);
-        if("1".equals(enc)) return Boolean.TRUE;
-        if("0".equals(enc)) return Boolean.FALSE;
+        if ("1".equals(enc)) return Boolean.TRUE;
+        if ("0".equals(enc)) return Boolean.FALSE;
         throw new IllegalArgumentException("illegal boolean RLP: 0x" + enc + ". Expected 0x1 or 0x0");
     }
 
     private static byte[] serializeBigInteger(V3Type ut, BigInteger val) {
-        if(val.signum() != 0) {
+        if (val.signum() != 0) {
             final byte[] bytes = val.toByteArray();
             return val.signum() < 0
                     ? signExtendNegative(bytes, ut.bitLen / Byte.SIZE)
@@ -227,7 +227,7 @@ public final class V3 {
     private static Object serializeBooleanArray(V3Type type, boolean[] booleans) {
         validateLength(type.arrayLen, booleans.length);
         final byte[] bytes;
-        if(booleans.length == 0) {
+        if (booleans.length == 0) {
             bytes = null;
         } else {
             StringBuilder binary = new StringBuilder("+");
@@ -243,13 +243,13 @@ public final class V3 {
 
     private static boolean[] deserializeBooleanArray(final V3Type type, final Iterator<RLPItem> sequenceIterator) {
         final int len = type.arrayLen == -1 ? sequenceIterator.next().asInt() : type.arrayLen;
-        if(len == 0) return new boolean[0];
+        if (len == 0) return new boolean[0];
         final String binaryStr = sequenceIterator.next().asBigInt().toString(2);
         final int numChars = binaryStr.length();
         final int impliedZeros = len - numChars;
         final boolean[] booleans = new boolean[len];
         for (int c = 0; c < numChars; c++) {
-            if(binaryStr.charAt(c) == '1') {
+            if (binaryStr.charAt(c) == '1') {
                 booleans[impliedZeros + c] = true;
             }
         }
@@ -343,6 +343,6 @@ public final class V3 {
     }
 
     private static void validateLength(int expected, int actual) {
-        if(expected != actual && expected != -1) throw new IllegalArgumentException();
+        if (expected != actual && expected != -1) throw new IllegalArgumentException();
     }
 }

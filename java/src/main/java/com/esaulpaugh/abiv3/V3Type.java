@@ -44,7 +44,7 @@ public final class V3Type {
     final V3Type[] elementTypes; // if a tuple type
 
     public Class<?> arrayClass() {
-        if(arrayClass != null) {
+        if (arrayClass != null) {
             return arrayClass;
         }
         try {

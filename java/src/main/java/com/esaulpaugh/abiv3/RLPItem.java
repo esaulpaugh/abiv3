@@ -57,7 +57,7 @@ public final class RLPItem implements Iterable<RLPItem> {
     }
 
     private RLPItem nextElement(int idx) {
-        if(idx >= endIndex) return null;
+        if (idx >= endIndex) return null;
         return wrap(buffer, idx, endIndex);
     }
 
@@ -122,7 +122,7 @@ public final class RLPItem implements Iterable<RLPItem> {
         final int lengthIndex = index + 1;
         final int dataIndex = requireInBounds((long) lengthIndex + diff, containerEnd, index);
         final long dataLength = Integers.getLong(buffer, lengthIndex, diff);
-        if(dataLength < DataType.MIN_LONG_DATA_LEN) {
+        if (dataLength < DataType.MIN_LONG_DATA_LEN) {
             throw new IllegalArgumentException("long element data length must be " + DataType.MIN_LONG_DATA_LEN
                     + " or greater; found: " + dataLength + " for element @ " + index);
         }
@@ -180,7 +180,7 @@ public final class RLPItem implements Iterable<RLPItem> {
 
         @Override
         public RLPItem next() {
-            if(hasNext()) {
+            if (hasNext()) {
                 RLPItem item = next;
                 next = null;
                 index = item.endIndex;

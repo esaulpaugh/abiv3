@@ -37,17 +37,17 @@ public final class RLPEncoder {
         if (raw instanceof Iterable<?>) {
             return listEncodedLen((Iterable<?>) raw);
         }
-        if(raw instanceof Object[]) {
+        if (raw instanceof Object[]) {
             return listEncodedLen(Arrays.asList((Object[]) raw));
         }
-        if(raw instanceof V3.DynamicBoolArray) {
+        if (raw instanceof V3.DynamicBoolArray) {
             V3.DynamicBoolArray dyn = (V3.DynamicBoolArray) raw;
             final int lengthOfLength = stringEncodedLen(dyn.arrayLenBytes);
-            if(dyn.dataBytes == null)
+            if (dyn.dataBytes == null)
                 return lengthOfLength;
             return lengthOfLength + stringEncodedLen(dyn.dataBytes);
         }
-        if(raw == null) {
+        if (raw == null) {
             return 0;
         }
         throw new IllegalArgumentException();
@@ -73,17 +73,20 @@ public final class RLPEncoder {
         } else if (raw instanceof Iterable<?>) {
             Iterable<?> elements = (Iterable<?>) raw;
             encodeList(sumEncodedLen(elements), elements, bb);
-        } else if(raw instanceof Object[]) {
+        } else if (raw instanceof Object[]) {
             Iterable<?> elements = Arrays.asList((Object[]) raw);
             encodeList(sumEncodedLen(elements), elements, bb);
-        } else if(raw instanceof V3.DynamicBoolArray) {
+        } else if (raw instanceof V3.DynamicBoolArray) {
             V3.DynamicBoolArray holder = (V3.DynamicBoolArray) raw;
             putString(holder.arrayLenBytes, bb);
-            if(holder.dataBytes != null) putString(holder.dataBytes, bb);
-        } else if(raw == null) {
+            if (holder.dataBytes != null) {
+                putString(holder.dataBytes, bb);
+            }
+        } else if (raw == null) {
             // skip
+        } else {
+            throw new IllegalArgumentException();
         }
-        throw new IllegalArgumentException();
     }
 
     /**
@@ -120,7 +123,7 @@ public final class RLPEncoder {
     }
 
     static void insertListPrefix(int dataLen, ByteBuffer bb) {
-        if(dataLen < DataType.MIN_LONG_DATA_LEN) {
+        if (dataLen < DataType.MIN_LONG_DATA_LEN) {
             bb.put((byte) (DataType.LIST_SHORT.offset + dataLen));
         } else {
             bb.put((byte) (DataType.LIST_LONG.offset + Integers.len(dataLen)));
