@@ -18,6 +18,15 @@ def next_terminator(signature, i):
             return i
 
 
+def last_index_of(string, char, start):
+    i = len(string) - 1
+    while i >= 0:
+        if string[i] == char:
+            return i
+        i = i - 1
+    return -1
+
+
 def find_subtuple_end(parent_type_str, arg_start):
     depth = 1
     i = arg_start
@@ -59,10 +68,10 @@ class TypeFactory:
         last_char_idx = len(raw_type) - 1
         if raw_type[last_char_idx] == ']':  # array
             second_to_last_char_idx = last_char_idx - 1
-            array_open_index = raw_type[second_to_last_char_idx:].index('[') + second_to_last_char_idx
+            array_open_index = last_index_of(raw_type, '[', second_to_last_char_idx)
             element_type = TypeFactory.build(raw_type[:array_open_index], base_type)
             the_type = element_type.canonicalType + raw_type[array_open_index:]
-            length = -1 if array_open_index == second_to_last_char_idx else parse_len(raw_type.substring(array_open_index + 1, last_char_idx))
+            length = -1 if array_open_index == second_to_last_char_idx else parse_len(raw_type[array_open_index + 1: last_char_idx])
             return V3Type(V3Type.TYPE_CODE_ARRAY, the_type, length, element_type, False, None, None, None)
         if base_type is not None:
             return base_type
