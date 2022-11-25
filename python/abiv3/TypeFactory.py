@@ -147,9 +147,9 @@ class TypeFactory:
         return None
 
 
-for i in range(8, 257, 8):
-    TypeFactory.type_map["int" + str(i)] = V3Type(V3Type.TYPE_CODE_ARRAY, "int" + str(i), i, None, False, False, i, None)
-    TypeFactory.type_map["uint" + str(i)] = V3Type(V3Type.TYPE_CODE_ARRAY, "uint" + str(i), i, None, False, True, i, None)
+for bit_len in range(8, 257, 8):
+    TypeFactory.type_map["int" + str(bit_len)] = V3Type(V3Type.TYPE_CODE_ARRAY, "int" + str(bit_len), None, None, False, False, bit_len, None)
+    TypeFactory.type_map["uint" + str(bit_len)] = V3Type(V3Type.TYPE_CODE_ARRAY, "uint" + str(bit_len), None, None, False, True, bit_len, None)
 
-for i in range(1, 33):
-    TypeFactory.type_map["bytes" + str(i)] = V3Type(V3Type.TYPE_CODE_ARRAY, "bytes" + str(i), i, V3Type.BYTE, False, None, None, None)
+for n in range(1, 33):
+    TypeFactory.type_map["bytes" + str(n)] = V3Type(V3Type.TYPE_CODE_ARRAY, "bytes" + str(n), n, V3Type.BYTE, False, None, None, None)
