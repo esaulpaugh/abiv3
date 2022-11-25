@@ -197,7 +197,7 @@ class V3:
         the_len = sequence_iterator.next().as_int() if v3_type.arrayLen == -1 else v3_type.arrayLen
         if the_len == 0:
             return []
-        binary = bin(sequence_iterator.next().as_int())[2:]
+        binary = '{0:b}'.format(sequence_iterator.next().as_int())
         num_chars = len(binary)
         implied_zeros = the_len - num_chars
         booleans = []
