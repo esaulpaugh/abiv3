@@ -61,7 +61,7 @@ print(dec.canonicalType)
 dec = TypeFactory.create("(fixed128x3)[]")
 print(dec.canonicalType)
 
-dec = TypeFactory.create("bool[90]")
+dec = TypeFactory.create("bool[][200]")
 print(dec.canonicalType)
 
 addr = TypeFactory.create('int32')

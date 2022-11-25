@@ -19,7 +19,7 @@ def next_terminator(signature, i):
 
 
 def last_index_of(string, char, start):
-    i = len(string) - 1
+    i = start
     while i >= 0:
         if string[i] == char:
             return i
