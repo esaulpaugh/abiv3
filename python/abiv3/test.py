@@ -63,6 +63,8 @@ print(dec.canonicalType)
 
 dec = TypeFactory.create("bool[][200]")
 print(dec.canonicalType)
+print(dec.elementType.canonicalType)
+print(dec.elementType.elementType.canonicalType)
 
 addr = TypeFactory.create('int32')
 print(addr.bitLen)
