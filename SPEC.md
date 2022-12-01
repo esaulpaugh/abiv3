@@ -31,7 +31,7 @@ Static boolean arrays are encoded as the RLP encoding of the (big-endian two's c
 
 Dynamic-length boolean arrays are encoded as if a static boolean array appended to the RLP encoding of the array length.
 
-For example, `[false, false, true, false]` would encode as `0x02` if a static boolean array and as `0x0402`.
+For example, `[false, false, true, false]` would encode as `0x02` if a static boolean array and as `0x0402` if a dynamic boolean array.
 
 ##### Integer array types:
 
