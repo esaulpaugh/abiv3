@@ -35,7 +35,7 @@ Dynamic-length boolean arrays are encoded as if a static boolean array appended 
 
 Integer arrays may be encoded in two ways:
 
-Variable-width, as if a tuple of integers.
+Variable-width, as if a byte array where the first byte is `0x00` and the remaining bytes are the concatenations of the encodings of the elements (as if they were base types).
 
 Fixed-width, as if a byte array where the first byte is the byte width, `w`, of the elements which follow, raw, in order, and `w` bytes each. Encoders SHOULD determine the byte width by the width of the widest element.
 
