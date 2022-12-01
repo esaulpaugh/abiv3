@@ -3,7 +3,7 @@
 
 The first (leftmost) three bits of the first byte are the version number in unsigned big-endian two's complement format. This is version 0. Versions 1-7 are reserved to accomodate future encoding formats.
 
-The last (rightmost) five bits of the first byte are the function identifier, a big-endian integer which is used instead of a four-byte hash selector. If the function ID is 31 or larger, all five bits are set and the RLP encoding of the ID is appended after byte zero.
+The last (rightmost) five bits of the first byte are the function identifier, an unsigned big-endian integer which is used instead of a four-byte hash selector. If the function ID is 31 or larger, all five bits are set and the RLP encoding of the ID is appended after byte zero.
 
 ### Arguments:
 
@@ -21,7 +21,7 @@ Non-negative integers are encoded as usual according to the RLP specification. N
 
 #### Array types:
 
-#### Byte array types (including `string`):
+#### Byte array types (including `string` which is utf-8 bytes):
 
 Byte arrays are encoded as an RLP string as per the RLP specification.
 
