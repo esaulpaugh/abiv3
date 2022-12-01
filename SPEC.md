@@ -1,4 +1,12 @@
 
+## Resources
+
+ABIv2 spec: https://solidity.readthedocs.io/en/latest/abi-spec.html
+
+RLP spec: https://github.com/ethereum/wiki/wiki/RLP
+
+## Encoding
+
 ### Byte zero:
 
 The first (leftmost) three bits of the first byte are the version number in unsigned big-endian two's complement format. This is version 0. Versions 1-7 are reserved to accomodate future encoding formats.
@@ -52,3 +60,7 @@ Version zero (this version) could also specify an arbitrarily large number of fu
 While the current ABIv2 spec permits encodings not of length 4 modulo 32 (because dynamic element offsets may be any arbitrary value), in practice, encodings are almost invariably of length 4 modulo 32.
 
 ABIv3 encodings therefore are forbidden to be of length 4 mod 32, and decoders MUST reject any such encodings. It is the responsibility of the encoder to avoid this by appending a final zero-byte if the encoding would otherwise have this property. Decoders SHOULD fail if unconsumed bytes remain after the last parameter has been decoded unless the length of the encoding is 5 mod 32 and only one unconsumed byte exists and that byte's value is zero.
+
+## Footnotes
+
+Algorithm and code based on https://github.com/esaulpaugh/headlong/blob/master/src/main/java/com/esaulpaugh/headlong/abi/SuperSerial.java
