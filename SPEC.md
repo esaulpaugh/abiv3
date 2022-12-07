@@ -49,6 +49,10 @@ Variable-width, as if a byte array where the first byte is `0x00` and the remain
 
 Fixed-width, as if a byte array where the first byte is the byte width, `w`, of the elements which follow, raw, in order, and `w` bytes each. Encoders SHOULD determine the byte width by the width of the widest element.
 
+##### All other array types (tuple arrays, multidimensional arrays):
+
+Arrays of objects are encoded as if a tuple containing the array elements.
+
 ### Versioning:
 
 Any or all of the 7 possible future versions can define an arbitrary number of sub-versions each, depending on how the lead bytes are interpreted.
