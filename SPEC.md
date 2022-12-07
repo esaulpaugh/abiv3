@@ -1,4 +1,13 @@
 
+## Assumptions
+
+### The following assumptions drive this iteration of the design:
+
+1. Ethereum will scale and the overwhelming majority of contract execution will occur on Layer-2 in and among contracts which do not exist today.
+2. Layer-2 computation costs will be inconsequential compared to costs proportional to calldata length (such as cryptographic verification).
+3. De facto, there is no calldata standardization on Layer 2 currently. It is not possible to achieve compatibility with existing L2 contracts in general because L2 contracts generally do not currently conform to any standard.
+4. If a proposed standard's calldata is significantly more expensive than custom hacked calldata, that standard will fail to achieve widespread adoption.
+
 ## Resources
 
 ABIv2 spec: https://solidity.readthedocs.io/en/latest/abi-spec.html
