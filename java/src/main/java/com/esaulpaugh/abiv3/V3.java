@@ -32,7 +32,7 @@ public final class V3 {
     private V3() {} // TODO keyed hashing? heuristics? compressibility?
 
     private static final byte[] TRUE = new byte[] { 0x1 };
-    private static final byte[] FALSE = new byte[0];
+    private static final byte[] FALSE = new byte[] { 0x00 };
 
     static final byte V3_VERSION_ID = 0;
 
@@ -158,10 +158,7 @@ public final class V3 {
     }
 
     private static Boolean deserializeBoolean(Iterator<RLPItem> sequenceIterator) {
-        final String enc = sequenceIterator.next().asBigInt().toString(16);
-        if ("1".equals(enc)) return Boolean.TRUE;
-        if ("0".equals(enc)) return Boolean.FALSE;
-        throw new IllegalArgumentException("illegal boolean RLP: 0x" + enc + ". Expected 0x1 or 0x0");
+        return sequenceIterator.next().asBool();
     }
 
     private static byte[] serializeBigInteger(V3Type ut, BigInteger val) {

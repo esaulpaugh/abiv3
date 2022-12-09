@@ -74,6 +74,16 @@ public final class RLPItem implements Iterable<RLPItem> {
         return Integers.getInt(buffer, dataIndex, dataLength);
     }
 
+    public boolean asBool() {
+        final byte[] data = data();
+        if (dataLength == 1) {
+            final byte z = data[0];
+            if (z == 0) return false;
+            if (z == 1) return true;
+        }
+        throw new IllegalArgumentException("illegal boolean RLP. Expected 0x1 or 0x0");
+    }
+
     public BigInteger asBigInt() {
         return Integers.getBigInt(buffer, dataIndex, dataLength);
     }

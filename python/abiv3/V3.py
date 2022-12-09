@@ -115,14 +115,14 @@ class V3:
 
     @staticmethod
     def serialize_boolean(val):
-        return b'\x01' if val else b''
+        return b'\x01' if val else b'\x00'
 
     @staticmethod
     def deserialize_boolean(sequence_iterator):
         enc = sequence_iterator.next().data()
         if enc == b'\x01':
             return True
-        if enc == b'':
+        if enc == b'\x00':
             return False
         raise Exception('illegal boolean RLP: expected 0x1 or 0x0')
 

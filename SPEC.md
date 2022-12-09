@@ -32,7 +32,7 @@ Tuples are encoded as an RLP list surrounding the concatenation of the encodings
 
 #### Base types:
 
-Booleans are encoded as one byte: either `0x01` for true or `0x80` for false.
+Booleans are encoded as one byte: either `0x01` for true or `0x00` for false.
 
 Non-negative integers are encoded as usual according to the RLP specification. Negative integers are sign-extended to the width of the datatype. For example, `0xffffff` for negative one as an `int24`.
 
