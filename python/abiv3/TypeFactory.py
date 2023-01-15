@@ -72,13 +72,6 @@ class TypeFactory:
         return TypeFactory.build(raw_type, None)
 
     @staticmethod
-    def resolve_base_type(base_type_str) -> V3Type | None:
-        if base_type_str[0] == '(':
-            return TypeFactory.parse_tuple_type(base_type_str)
-        ret = TypeFactory.typeMap.get(base_type_str)
-        return ret if ret is not None else TypeFactory.try_parse_fixed(base_type_str)
-
-    @staticmethod
     def build(raw_type, base_type) -> V3Type:
         last_char_idx = len(raw_type) - 1
         if raw_type[last_char_idx] == ']':  # array
@@ -94,6 +87,13 @@ class TypeFactory:
         if base_type is not None:
             return base_type
         raise Exception(f'unrecognized type: "{raw_type}"')
+
+    @staticmethod
+    def resolve_base_type(base_type_str) -> V3Type | None:
+        if base_type_str[0] == '(':
+            return TypeFactory.parse_tuple_type(base_type_str)
+        ret = TypeFactory.typeMap.get(base_type_str)
+        return ret if ret is not None else TypeFactory.try_parse_fixed(base_type_str)
 
     @staticmethod
     def parse_tuple_type(raw_type_str) -> V3Type | None:
