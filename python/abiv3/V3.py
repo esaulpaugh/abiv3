@@ -49,7 +49,7 @@ class V3:
         fn_number = zeroth & 0b0001_1111
         if fn_number >= 31:
             fn_number_item = Utils.wrap(rlp, 1, rlp.length)
-            fn_number = fn_number_item.asInt()
+            fn_number = fn_number_item.as_int()
             if fn_number < 31:
                 raise Exception()
             sequence_start = fn_number_item.endIndex
