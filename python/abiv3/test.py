@@ -96,7 +96,7 @@ objects = [ints]
 
 print(objects)
 
-arr = V3.to_rlp(0, schema, objects)
+arr = V3.to_rlp(31, schema, objects)
 
 n = len(arr)
 print('len = ' + str(n))
@@ -114,7 +114,7 @@ print()
 
 print(objects)
 
-arr = V3.to_rlp(0, schema, objects)
+arr = V3.to_rlp(499, schema, objects)
 
 n = len(arr)
 print('len = ' + str(n))
