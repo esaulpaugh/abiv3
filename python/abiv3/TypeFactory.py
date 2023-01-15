@@ -14,16 +14,16 @@
 from abiv3.V3Type import V3Type
 
 
-def lead_digit_valid(c):
+def lead_digit_valid(c) -> bool:
     return 0 < int(c) <= 9
 
 
-def parse_len(len_str):
+def parse_len(len_str) -> int:
     if lead_digit_valid(len_str[0]) or "0" == len_str:
         return int(len_str)
 
 
-def next_terminator(signature, i):
+def next_terminator(signature, i) -> int:
     while True:
         i = i + 1
         c = signature[i]
@@ -31,18 +31,18 @@ def next_terminator(signature, i):
             return i
 
 
-def last_index(string, ch):
+def last_index(string, ch) -> int:
     return last_index_from(string, ch, len(string) - 1)
 
 
-def last_index_from(string, ch, from_index):
+def last_index_from(string, ch, from_index) -> int:
     for i in range(from_index, 0, -1):
         if string[i] == ch:
             return i
     return -1
 
 
-def find_subtuple_end(parent_type_str, arg_start):
+def find_subtuple_end(parent_type_str, arg_start) -> int:
     depth = 1
     i = arg_start
     while True:
@@ -68,18 +68,18 @@ class TypeFactory:
     }
 
     @staticmethod
-    def create(raw_type):
+    def create(raw_type) -> V3Type:
         return TypeFactory.build(raw_type, None)
 
     @staticmethod
-    def resolve_base_type(base_type_str):
+    def resolve_base_type(base_type_str) -> V3Type | None:
         if base_type_str[0] == '(':
             return TypeFactory.parse_tuple_type(base_type_str)
         ret = TypeFactory.typeMap.get(base_type_str)
         return ret if ret is not None else TypeFactory.try_parse_fixed(base_type_str)
 
     @staticmethod
-    def build(raw_type, base_type):
+    def build(raw_type, base_type) -> V3Type:
         last_char_idx = len(raw_type) - 1
         if raw_type[last_char_idx] == ']':  # array
             second_to_last_char_idx = last_char_idx - 1
@@ -96,7 +96,7 @@ class TypeFactory:
         raise Exception(f'unrecognized type: "{raw_type}"')
 
     @staticmethod
-    def parse_tuple_type(raw_type_str):
+    def parse_tuple_type(raw_type_str) -> V3Type | None:
         the_len = len(raw_type_str)
         if the_len == 2 and raw_type_str == "()":
             return V3Type(V3Type.TYPE_CODE_TUPLE, "()", None, None, False, None, None, [])
@@ -122,7 +122,7 @@ class TypeFactory:
         return V3Type(V3Type.TYPE_CODE_TUPLE, canonical_builder, None, None, False, None, None, elements) if arg_end == the_len else None
 
     @staticmethod
-    def try_parse_fixed(base_type_str):
+    def try_parse_fixed(base_type_str) -> V3Type | None:
         idx = base_type_str.index("fixed")
         unsigned = idx == 1 and base_type_str[0] == 'u'
         if idx == 0 or unsigned:

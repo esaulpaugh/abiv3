@@ -14,15 +14,15 @@
 from abiv3.RLPItem import RLPItem
 
 
-def to_bytes(number):
+def to_bytes(number) -> bytes:
     return to_bytes_unsigned(number) if number >= 0 else to_bytes_negative(number)
 
 
-def to_bytes_unsigned(number):
+def to_bytes_unsigned(number) -> bytes:
     return number.to_bytes(unsigned_length(number), "big")
 
 
-def unsigned_length(val):
+def unsigned_length(val) -> int:
     n = 0
     while val != 0:
         n = n + 1
@@ -30,7 +30,7 @@ def unsigned_length(val):
     return n
 
 
-def to_bytes_negative(val):
+def to_bytes_negative(val) -> bytearray:
     n = 0
     temp = val
     while temp != -1:
@@ -44,13 +44,13 @@ def to_bytes_negative(val):
     return arr
 
 
-def to_signed_byte(lead):
+def to_signed_byte(lead) -> int:
     if lead >= 128:
         return lead - 256
     return lead
 
 
-def wrap(buffer, index, container_end):
+def wrap(buffer, index, container_end) -> RLPItem:
     lead = buffer[index]
     rlp_type = RLPItem.rlp_type(lead)
     if rlp_type == 0:
