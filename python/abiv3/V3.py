@@ -48,7 +48,7 @@ class V3:
         sequence_start = 1
         fn_number = zeroth & 0b0001_1111
         if fn_number >= 31:
-            fn_number_item = Utils.wrap(rlp, 1, rlp.length)
+            fn_number_item = Utils.wrap(rlp, 1, len(rlp))
             fn_number = fn_number_item.as_int()
             if fn_number < 31:
                 raise Exception()
@@ -62,7 +62,7 @@ class V3:
             if fn_num == 0:
                 return [b'\x00']
             return [arr]
-        return [b'31', arr]
+        return [b'\x1f', arr]
 
     @staticmethod
     def validate_length(expected_len, actual_len):
