@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from abiv3 import Utils
+from abiv3 import Utils, RLPItem
 
 
 class RLPIterator:
@@ -23,7 +23,11 @@ class RLPIterator:
         self.index = index
         self.container_end = container_end
 
-    def has_next(self):
+    @staticmethod
+    def sequence_iterator(buffer, index):
+        return RLPIterator(buffer, index, len(buffer))
+
+    def has_next(self) -> bool:
         if self.next_item is not None:
             return True
         if self.index < self.container_end:
@@ -32,14 +36,10 @@ class RLPIterator:
             return True
         return False
 
-    def next(self):
+    def next(self) -> RLPItem:
         if self.has_next():
             it = self.next_item
             self.next_item = None
             self.index = it.endIndex
             return it
         raise Exception('no such element')
-
-    @staticmethod
-    def sequence_iterator(buffer, index):
-        return RLPIterator(buffer, index, len(buffer))
