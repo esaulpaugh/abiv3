@@ -61,6 +61,10 @@ public final class RLPItem implements Iterable<RLPItem> {
         return wrap(buffer, idx, endIndex);
     }
 
+    public DataType type() {
+        return DataType.type(buffer[index]);
+    }
+
     /**
      * Returns the payload portion of this item only, and not the prefix.
      *

@@ -15,6 +15,7 @@ from PyByteBuffer import ByteBuffer
 
 from abiv3 import Utils
 from abiv3.RLPEncoder import RLPEncoder, DynamicBoolArray
+from abiv3.RLPItem import RLPItem
 from abiv3.RLPIterator import RLPIterator
 from abiv3.V3Type import V3Type
 
@@ -48,6 +49,9 @@ class V3:
         sequence_start = 1
         fn_number = zeroth & 0b0001_1111
         if fn_number >= 31:
+            lead = rlp[1]
+            if lead == 0x00 or RLPItem.rlp_type(lead) >= 3:
+                raise Exception('invalid function ID format')
             fn_number_item = Utils.wrap(rlp, 1, len(rlp))
             fn_number = fn_number_item.as_int()
             if fn_number < 31:
