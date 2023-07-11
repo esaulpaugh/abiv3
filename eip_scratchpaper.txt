@@ -1,0 +1,17 @@
+--description--
+A space-efficient standard for contract ABI with Layer 2 in mind
+
+--abstract--
+The ABIv3 encoding algorithm is an evolution of Solidity's ABIv2 designed for Layer-2 smart contracts with a focus on maximizing space efficiency. ABIv3 is designed to be both extensible and readily differentiable from prior ABI standards, especially ABIv2. They key to its space efficiency is its basis on Recursive Length Prefix (RLP) encoding, an algorithm for serializing hierarchical data in a tightly-packed format.
+
+--motivation--
+This EIP assumes that Layer 2 protocols are the future of Ethereum scaling.
+
+For the forseeable future, Layer 2 protocols such as optimistic rollups will incur significant costs that scale with the number of bytes they include. Up to now, smart contract developers have understandably chosen to minimize these costs by customizing in an ad-hoc manner their serialized function calls to be as short as possible. This has led to a ubiquitous lack of standardization among smart contracts leveraging Layer 2 protocols. This failure to standardize has caused the interfaces to these contracts to be generally mutually incompatible and relatively opaque even to specialized software tools. The current ABIv2 standard has failed to address this issue due to it requiring a large number of bytes to encode even relatively simple function calls, and future Layer 2 smart contracts should be able to opt in to an ABIv3 standard which offers compatibility and inspectability at minimal cost.
+
+--rationale--
+1. Ethereum will scale and the overwhelming majority of contract execution will occur on Layer-2 in and among contracts which do not exist today.
+2. De facto, there is no calldata standardization on Layer 2 currently. It is not possible to achieve compatibility with existing L2 contracts in general because L2 contracts generally do not conform to any standard.
+3. Layer-2 computation costs will be inconsequential compared to costs that scale with calldata length (such as cryptographic verification).
+4. If a proposed standard's calldata is significantly more expensive than custom hacked calldata, that standard will fail to achieve widespread adoption.
+
