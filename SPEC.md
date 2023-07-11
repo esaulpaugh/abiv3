@@ -18,9 +18,9 @@ RLP spec: https://github.com/ethereum/wiki/wiki/RLP
 
 ### Byte zero:
 
-The first (leftmost) three bits of the first byte are the version number in unsigned big-endian two's complement format. This is version 0. Versions 1-7 are reserved to accommodate future encoding formats.
+The first (leftmost) two bits of the first byte are the version number in unsigned big-endian two's complement format. This is version 0. Versions 1-3 are reserved to accommodate future encoding formats.
 
-The last (rightmost) five bits of the first byte are the function identifier, an unsigned big-endian integer which is used instead of a four-byte hash selector. If the function ID is 31 or larger, all five bits are set and the RLP encoding of the ID is appended after byte zero.
+The last (rightmost) six bits of the first byte are the function identifier, an unsigned big-endian integer which is used instead of a four-byte hash selector. If the function ID is 63 or larger, all six bits are set and the RLP encoding of the ID is appended after byte zero.
 
 ### Arguments:
 
@@ -64,9 +64,9 @@ Arrays of objects are encoded as if a tuple containing the array elements.
 
 ### Versioning:
 
-Any or all of the 7 possible future versions can define an arbitrary number of sub-versions each, depending on how the lead bytes are interpreted.
+Any or all of the 3 possible future versions can define an arbitrary number of sub-versions each, depending on how the lead bytes are interpreted.
 
-Version zero (this version) could also specify an arbitrarily large number of future sub-versions of itself. To define an incompatible subversion, specify byte zero as `00011111` (i.e. `0x1f`) and byte one as something other than the RLP encoding of an integer, such as `0xc0` (because this is a list item) or `0x00` (because leading zeroes are not allowed).
+Version zero (this version) could also specify an arbitrarily large number of future sub-versions of itself. To define an incompatible subversion, specify byte zero as `00111111` (i.e. `0x3f`) and byte one as something other than the RLP encoding of an integer, such as `0xc0` (because this is a list item) or `0x00` (because leading zeroes are not allowed).
 
 ### Distinguishing from ABIv2:
 

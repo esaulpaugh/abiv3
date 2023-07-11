@@ -23,7 +23,9 @@ from abiv3.V3Type import V3Type
 # next tuple len list type str sum bytes int
 class V3:
 
-    V3_VERSION_ID = 0
+    VERSION_ID = 0
+    VERSION_MASK = 0b1100_0000
+    ID_MASK = 0b0011_1111  # decimal 63 and the inverse of VERSION_MASK
 
     @staticmethod
     def to_rlp(function_number, schema, vals):
@@ -43,18 +45,18 @@ class V3:
     @staticmethod
     def from_rlp(schema, rlp):
         zeroth = rlp[0]
-        version = zeroth & 0b1110_0000
-        if version != V3.V3_VERSION_ID:
+        version = zeroth & V3.VERSION_MASK
+        if version != V3.VERSION_ID:
             raise Exception()
         sequence_start = 1
-        fn_number = zeroth & 0b0001_1111
-        if fn_number >= 31:
+        fn_number = zeroth & V3.ID_MASK
+        if fn_number == V3.ID_MASK:
             lead = rlp[1]
             if lead == 0x00 or RLPItem.rlp_type(lead) >= 3:
                 raise Exception('invalid function ID format')
             fn_number_item = Utils.wrap(rlp, 1, len(rlp))
             fn_number = fn_number_item.as_int()
-            if fn_number < 31:
+            if fn_number < V3.ID_MASK:
                 raise Exception()
             sequence_start = fn_number_item.endIndex
         return V3.deserialize_tuple(schema, RLPIterator.sequence_iterator(rlp, sequence_start))
@@ -62,11 +64,11 @@ class V3:
     @staticmethod
     def header(fn_num):
         arr = Utils.to_bytes_unsigned(fn_num)
-        if fn_num < 31:
+        if fn_num < V3.ID_MASK:
             if fn_num == 0:
                 return [b'\x00']
             return [arr]
-        return [b'\x1f', arr]
+        return [b'\x3f', arr]
 
     @staticmethod
     def validate_length(expected_len, actual_len):

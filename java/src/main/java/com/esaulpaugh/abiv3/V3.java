@@ -34,7 +34,9 @@ public final class V3 {
     private static final byte[] TRUE = new byte[] { 0x1 };
     private static final byte[] FALSE = new byte[] { 0x00 };
 
-    static final byte V3_VERSION_ID = 0;
+    static final byte VERSION_ID = 0;
+    static final byte VERSION_MASK = (byte) 0b1100_0000;
+    static final byte ID_MASK = (byte) ~VERSION_MASK; // i.e. 0b0011_1111, the inverse of VERSION_MASK
 
 //    private static final byte[] PREFIX = new byte[] { (byte) 0xca, (byte) 0xfe, (byte) 0xde, (byte) 0xf1 };
 
@@ -55,20 +57,20 @@ public final class V3 {
 
     public static Object[] fromRLP(V3Type[] schema, byte[] rlp) {
         final byte zeroth = rlp[0];
-        final int version = zeroth & 0b1110_0000;
-        if (version != V3_VERSION_ID) {
+        final int version = zeroth & VERSION_MASK;
+        if (version != VERSION_ID) {
             throw new IllegalArgumentException();
         }
         int sequenceStart = 1;
-        int fnNumber = zeroth & 0b0001_1111;
-        if (fnNumber >= 31) {
+        int fnNumber = zeroth & ID_MASK;
+        if (fnNumber == ID_MASK) {
             final RLPItem fnNumberItem = RLPItem.wrap(rlp, 1, rlp.length);
             final DataType type = fnNumberItem.type();
             if (rlp[1] == 0x00 || type == DataType.LIST_SHORT || type == DataType.LIST_LONG) {
                 throw new IllegalArgumentException("invalid function ID format");
             }
             fnNumber = fnNumberItem.asInt();
-            if (fnNumber < 31) throw new IllegalArgumentException();
+            if (fnNumber < ID_MASK) throw new IllegalArgumentException();
             sequenceStart = fnNumberItem.endIndex;
         }
         return deserializeTuple(schema, RLPItem.ABIv3Iterator.sequenceIterator(rlp, sequenceStart));
@@ -77,13 +79,13 @@ public final class V3 {
     private static byte[][] header(int functionNumber) {
         if (functionNumber < 0) throw new IllegalArgumentException();
         final byte[] fnNumber = Integers.toBytes(functionNumber);
-        if (functionNumber < 31) {
+        if (functionNumber < ID_MASK) {
             if (functionNumber == 0) {
                 return new byte[][] { new byte[] { 0 } };
             }
             return new byte[][] { fnNumber };
         }
-        return new byte[][] { new byte[] { 0b0001_1111 }, fnNumber };
+        return new byte[][] { new byte[] { ID_MASK }, fnNumber };
     }
 
     private static byte[] generateSelector(String functionName, V3Type[] schema) {
