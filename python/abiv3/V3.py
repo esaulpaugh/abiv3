@@ -52,7 +52,7 @@ class V3:
         fn_number = zeroth & V3.ID_MASK
         if fn_number == V3.ID_MASK:
             lead = rlp[1]
-            if lead == 0x00 or RLPItem.rlp_type(lead) >= 3:
+            if lead == 0x00 or RLPItem.rlp_type(lead) >= 2:
                 raise Exception('invalid function ID format')
             fn_number_item = Utils.wrap(rlp, 1, len(rlp))
             fn_number = fn_number_item.as_int()

@@ -66,7 +66,7 @@ public final class V3 {
         if (fnNumber == ID_MASK) {
             final RLPItem fnNumberItem = RLPItem.wrap(rlp, 1, rlp.length);
             final DataType type = fnNumberItem.type();
-            if (rlp[1] == 0x00 || type == DataType.LIST_SHORT || type == DataType.LIST_LONG) {
+            if (rlp[1] == 0x00 || type == DataType.STRING_LONG || type == DataType.LIST_SHORT || type == DataType.LIST_LONG) {
                 throw new IllegalArgumentException("invalid function ID format");
             }
             fnNumber = fnNumberItem.asInt();
