@@ -15,3 +15,5 @@ For the forseeable future, Layer 2 protocols such as optimistic rollups will inc
 3. Layer-2 computation costs will be inconsequential compared to costs that scale with calldata length (such as cryptographic verification).
 4. If a proposed standard's calldata is significantly more expensive than custom hacked calldata, that standard will fail to achieve widespread adoption.
 
+--example contract--
+3660006000376040600080511A10601557600080FD5B603F60015114602357600080F35B600080F3
