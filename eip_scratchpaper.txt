@@ -15,6 +15,37 @@ For the forseeable future, Layer 2 protocols such as optimistic rollups will inc
 3. Layer-2 computation costs will be inconsequential compared to costs that scale with calldata length (such as cryptographic verification).
 4. If a proposed standard's calldata is significantly more expensive than custom hacked calldata, that standard will fail to achieve widespread adoption.
 
---example contract--
-600D565B600080FD5B600080F35B36600080376000518060001A604081106024576003565B603F81106045578060011A8060001460035760B78111600357607F81116008575B600856
-600D565B5F80FD5B5F80F35B365F80375F51805F1A604081106024576003565B603F81106045578060011A805F1460035760B78111600357607F81116008575B600856
+--example code--
+object "Contract1" {
+    code {
+        // calldatacopy(0, 0, calldatasize())
+        let w := calldataload(0x00)
+        let zeroth := byte(w, 0x00)
+        if gt(zeroth, 0x3f) { stop() }
+        if gt(0x3f, zeroth) {
+            let fnNumber := zeroth
+            return(0, 0)
+        }
+        let first := byte(w, 0x01)
+        let badFirst := or(or(eq(0x00, first), eq(0x80, first)), gt(first, 0xb7))
+        if badFirst { stop() }
+        if lt(first, 0x80) {
+            let fnNumber := first
+            return(0, 0)
+        }
+
+        let data_length := sub(first, 0x80)
+        let end_index := add(2, data_length)
+
+        let shift_amount := sub(mul(data_length, 8), 8)
+        let fnNumber := 0
+        for { let i := 2 } lt(i, end_index) { i := add(i, 1) } {
+            fnNumber := or(fnNumber, shl(shift_amount, byte(i, w)))
+            shift_amount := sub(shift_amount, 8)
+        }
+
+        return(0, 0)
+    }
+}
+
+6000356000811a603f811115601057005b80603f1115601d57600080f35b6001821a60b78111816080148260001417178015603657005b6080821015604357600080f35b6080820380600201600880830203600060025b8381101560765788811a831b821791506008830392506001810190506056565b600080f3
