@@ -20,7 +20,7 @@ RLP spec: https://github.com/ethereum/wiki/wiki/RLP
 
 The first (leftmost) two bits of the first byte are the version number in unsigned big-endian two's complement format. This is version 0. Versions 1-3 are reserved to accommodate future encoding formats.
 
-The last (rightmost) six bits of the first byte are the function identifier, an unsigned big-endian integer which is used instead of a four-byte hash selector. If the function ID is 63 or larger, all six bits are set and the RLP encoding of the ID is appended after byte zero.
+The last (rightmost) six bits of the first byte are the function identifier, an unsigned big-endian integer which is used instead of a four-byte hash selector. If the function ID is 63 or larger, all six bits are set and the RLP encoding of function ID minus 63 is appended after byte zero.
 
 ### Arguments:
 

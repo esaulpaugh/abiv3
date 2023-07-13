@@ -36,7 +36,7 @@ public final class V3 {
 
     static final byte VERSION_ID = 0;
     static final byte VERSION_MASK = (byte) 0b1100_0000;
-    static final byte ID_MASK = (byte) ~VERSION_MASK; // i.e. 0b0011_1111, the inverse of VERSION_MASK
+    static final byte ID_MASK = (byte) ~VERSION_MASK; // 0x3f (decimal 63), the complement of VERSION_MASK
 
 //    private static final byte[] PREFIX = new byte[] { (byte) 0xca, (byte) 0xfe, (byte) 0xde, (byte) 0xf1 };
 
@@ -69,8 +69,8 @@ public final class V3 {
             if (rlp[1] == 0x00 || type == DataType.STRING_LONG || type == DataType.LIST_SHORT || type == DataType.LIST_LONG) {
                 throw new IllegalArgumentException("invalid function ID format");
             }
-            fnNumber = fnNumberItem.asInt();
-            if (fnNumber < ID_MASK) throw new IllegalArgumentException();
+            fnNumber = ID_MASK + fnNumberItem.asInt();
+            if (fnNumber < 0) throw new AssertionError();
             sequenceStart = fnNumberItem.endIndex;
         }
         return deserializeTuple(schema, RLPItem.ABIv3Iterator.sequenceIterator(rlp, sequenceStart));
@@ -78,14 +78,13 @@ public final class V3 {
 
     private static byte[][] header(int functionNumber) {
         if (functionNumber < 0) throw new IllegalArgumentException();
-        final byte[] fnNumber = Integers.toBytes(functionNumber);
         if (functionNumber < ID_MASK) {
             if (functionNumber == 0) {
                 return new byte[][] { new byte[] { 0 } };
             }
-            return new byte[][] { fnNumber };
+            return new byte[][] { Integers.toBytes(functionNumber) };
         }
-        return new byte[][] { new byte[] { ID_MASK }, fnNumber };
+        return new byte[][] { new byte[] { ID_MASK }, Integers.toBytes(functionNumber - ID_MASK) };
     }
 
     private static byte[] generateSelector(String functionName, V3Type[] schema) {
