@@ -50,15 +50,15 @@ public final class V3 {
     }
 
     public static byte[] encodeFunction(int functionNumber, V3Type[] schema, Object[] vals) {
-        List<Object> results = new ArrayList<>();
+        List<byte[]> results = new ArrayList<>();
         byte[][] header = header(functionNumber);
         if (header.length == 2) {
             results.add(header[1]);
         }
         serializeTuple(schema, vals, results);
-        ByteBuffer encoding = ByteBuffer.allocate(0);
-        for (Object result : results) {
-            encoding.put((byte[]) result);
+        ByteBuffer encoding = ByteBuffer.allocate(350);
+        for (byte[] result : results) {
+            encoding.put(result);
         }
         return encoding.array();
     }
@@ -95,20 +95,20 @@ public final class V3 {
         return new byte[][] { new byte[] { ID_MASK }, Integers.toBytes(functionNumber - ID_MASK) };
     }
 
-    private static void encode(V3Type t, Object val, List<Object> results) {
+    private static void encode(V3Type t, Object val, List<byte[]> results) {
         switch (t.typeCode) {
-        case V3Type.TYPE_CODE_BOOLEAN: serializeBoolean((boolean) val, results);
-        case V3Type.TYPE_CODE_BIG_INTEGER: serializeInteger(t, (BigInteger) val, results);
-        case V3Type.TYPE_CODE_ARRAY: throw new UnsupportedOperationException();
-        case V3Type.TYPE_CODE_TUPLE: serializeTuple(t.elementTypes, (Object[]) val, results);
+        case V3Type.TYPE_CODE_BOOLEAN: serializeBoolean((boolean) val, results); return;
+        case V3Type.TYPE_CODE_BIG_INTEGER: serializeInteger(t, (BigInteger) val, results); return;
+        case V3Type.TYPE_CODE_ARRAY: serializeArray(t, val, results); return;
+        case V3Type.TYPE_CODE_TUPLE: serializeTuple(t.elementTypes, (Object[]) val, results); return;
         }
     }
 
-    private static void serializeBoolean(boolean val, List<Object> results) {
+    private static void serializeBoolean(boolean val, List<byte[]> results) {
         results.add(new byte[] { val ? (byte) 0x01 : (byte) 0x00 });
     }
 
-    private static void serializeInteger(V3Type ut, BigInteger val, List<Object> results) {
+    private static void serializeInteger(V3Type ut, BigInteger val, List<byte[]> results) {
         final byte[] valBytes;
         if (val.signum() != 0) {
             final byte[] bytes = val.toByteArray();
@@ -130,7 +130,7 @@ public final class V3 {
         return extended;
     }
 
-    private static void serializeTuple(V3Type[] tupleType, Object[] tuple, List<Object> results) {
+    private static void serializeTuple(V3Type[] tupleType, Object[] tuple, List<byte[]> results) {
         validateLength(tupleType.length, tuple.length);
         final Object[] out = new Object[tupleType.length];
         for(int i = 0; i < out.length; i++) {
@@ -140,5 +140,49 @@ public final class V3 {
 
     private static void validateLength(int expected, int actual) {
         if (expected != actual && expected != -1) throw new IllegalArgumentException();
+    }
+
+    private static void serializeArray(V3Type type, Object arr, List<byte[]> results) {
+        final V3Type et = type.elementType;
+        switch (et.typeCode) {
+        case V3Type.TYPE_CODE_BOOLEAN: serializeBooleanArray(type, (boolean[]) arr, results); return;
+        case V3Type.TYPE_CODE_BYTE: serializeByteArray(type, arr, results); return;
+        case V3Type.TYPE_CODE_BIG_INTEGER: serializeBigIntegerArray(type, (BigInteger[]) arr, results); return;
+        case V3Type.TYPE_CODE_ARRAY:
+        case V3Type.TYPE_CODE_TUPLE: serializeObjectArray(type, (Object[]) arr, results); return;
+        default: throw new AssertionError();
+        }
+    }
+
+    private static void serializeBooleanArray(V3Type type, boolean[] booleans, List<byte[]> results) {
+        validateLength(type.arrayLen, booleans.length);
+        if (type.arrayLen == -1) {
+            results.add(Integers.toBytes(booleans.length));
+        }
+        if (booleans.length > 0) {
+            StringBuilder binary = new StringBuilder("+");
+            for (boolean b : booleans) {
+                binary.append(b ? '1' : '0');
+            }
+            serializeInteger(type, new BigInteger(binary.toString(), 2), results);
+        }
+    }
+
+    private static void serializeByteArray(V3Type type, Object arr, List<byte[]> results) {
+        byte[] bytes = type.isString ? ((String) arr).getBytes(StandardCharsets.UTF_8) : (byte[]) arr;
+        validateLength(type.arrayLen, bytes.length);
+        results.add(bytes);
+    }
+
+    private static void serializeBigIntegerArray(V3Type type, BigInteger[] arr, List<byte[]> results) {
+        validateLength(type.arrayLen, arr.length);
+        results.add(null);
+    }
+
+    private static void serializeObjectArray(V3Type type, Object[] objects, List<byte[]> results) {
+        validateLength(type.arrayLen, objects.length);
+        for (Object object : objects) {
+            encode(type.elementType, object, results);
+        }
     }
 }
