@@ -149,14 +149,14 @@ public final class Main {
     }
 
     private static void test(final int fnNumber, final V3Type[] schema, final Object... values) {
-        final byte[] rlp = V3.toRLP(fnNumber, schema, values);
-        final String calldataStr = slowHex(rlp); // new BigInteger(1, rlp).toString(16);
+        final byte[] encoding = V3.encodeFunction(fnNumber, schema, values);
+        final String calldataStr = slowHex(encoding); // new BigInteger(1, rlp).toString(16);
         System.out.println("case" + caseNumber++ + ":\t\t"
                 + fnNumber + "\t\t"
                 + V3.createSignature("foo", schema) + " --> "
                 + calldataStr + "\t\t"
-                + " (len " + rlp.length + ")");
-        final Object[] decoded = V3.fromRLP(schema, rlp);
+                + " (len " + encoding.length + ")");
+        final Object[] decoded = V3.decodeFunction(schema, encoding);
         final boolean eq = Arrays.deepEquals(values, decoded);
         if (!eq) {
             throw new AssertionError(values + " != " + decoded);
