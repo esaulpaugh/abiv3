@@ -62,8 +62,8 @@ public final class V3Type {
         this(canonicalType, TYPE_CODE_BIG_INTEGER, null, BigInteger.class, BigInteger[].class, null, null, unsigned, bitLen, null);
     }
 
-    V3Type(String canonicalType, V3Type[] elementTypes) {
-        this(canonicalType, V3Type.TYPE_CODE_TUPLE, null, Object[].class, Object[][].class, null, null, null, null, elementTypes);
+    V3Type(V3Type[] elementTypes) {
+        this(createSignature(elementTypes), V3Type.TYPE_CODE_TUPLE, null, Object[].class, Object[][].class, null, null, null, null, elementTypes);
     }
 
     private V3Type(String canonicalType, int typeCode, Integer arrayLen, Class<?> clazz, Class<?> arrayClass, V3Type elementType,
@@ -87,4 +87,16 @@ public final class V3Type {
     static final V3Type BOOL = new V3Type("bool", TYPE_CODE_BOOLEAN,
             null, Boolean.class, Boolean[].class, null, null,
             true, 1, null);
+
+    private static String createSignature(V3Type[] elementTypes) {
+        if (elementTypes.length == 0) {
+            return "()";
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append('(');
+        for (V3Type t : elementTypes) {
+            sb.append(t.canonicalType).append(',');
+        }
+        return sb.deleteCharAt(sb.length() - 1).append(')').toString(); // replace trailing comma
+    }
 }

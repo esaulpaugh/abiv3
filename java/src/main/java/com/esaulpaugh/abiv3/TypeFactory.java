@@ -139,7 +139,7 @@ public final class TypeFactory {
 
     private static V3Type parseTupleType(final String rawTypeStr) { /* assumes that rawTypeStr.charAt(0) == '(' */
         final int len = rawTypeStr.length();
-        if (len == 2 && rawTypeStr.equals("()")) return new V3Type("()", new V3Type[0]);
+        if (len == 2 && rawTypeStr.equals("()")) return new V3Type(new V3Type[0]);
         final List<V3Type> elements = new ArrayList<>();
         int argEnd = 1;
         final StringBuilder canonicalBuilder = new StringBuilder("(");
@@ -160,7 +160,7 @@ public final class TypeFactory {
             throw new IllegalArgumentException("@ index " + elements.size() + ", " + iae.getMessage(), iae);
         }
         return argEnd == len
-                ? new V3Type(canonicalBuilder.deleteCharAt(canonicalBuilder.length() - 1).append(')').toString(), elements.toArray(new V3Type[0]))
+                ? new V3Type(elements.toArray(new V3Type[0]))
                 : null;
     }
 
