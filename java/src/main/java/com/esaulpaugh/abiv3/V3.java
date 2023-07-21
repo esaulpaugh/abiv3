@@ -94,7 +94,7 @@ public final class V3 {
     private static void encode(V3Type t, Object val, List<byte[]> results) {
         switch (t.typeCode) {
         case V3Type.TYPE_CODE_BOOLEAN: encodeBoolean((boolean) val, results); return;
-        case V3Type.TYPE_CODE_BIG_INTEGER: encodeInteger(t, (BigInteger) val, results); return;
+        case V3Type.TYPE_CODE_BIG_INTEGER: encodeInteger(t.bitLen / Byte.SIZE, (BigInteger) val, results); return;
         case V3Type.TYPE_CODE_ARRAY: encodeArray(t, val, results); return;
         case V3Type.TYPE_CODE_TUPLE: encodeTuple(t, (Object[]) val, results); return;
         default: throw new Error();
@@ -119,22 +119,22 @@ public final class V3 {
         return bb.get() != 0;
     }
 
-    private static void encodeInteger(V3Type ut, BigInteger val, List<byte[]> results) {
-        final byte[] valBytes = new byte[ut.bitLen / Byte.SIZE];
+    private static void encodeInteger(int byteLen, BigInteger val, List<byte[]> results) {
+        final byte[] destBytes = new byte[byteLen];
         if (val.signum() != 0) {
-            final byte[] bytes = val.toByteArray();
+            final byte[] sourceBytes = val.toByteArray();
             if (val.signum() < 0) {
-                byte[] extended = signExtendNegative(bytes, ut.bitLen / Byte.SIZE);
+                byte[] extended = signExtendNegative(sourceBytes, byteLen);
                 results.add(extended);
                 return;
             }
-            if (bytes[0] != 0) {
-                System.arraycopy(bytes, 0, valBytes, valBytes.length - bytes.length, bytes.length);
+            if (sourceBytes[0] != 0) {
+                System.arraycopy(sourceBytes, 0, destBytes, destBytes.length - sourceBytes.length, sourceBytes.length);
             } else {
-                System.arraycopy(bytes, 1, valBytes, 1 + valBytes.length - bytes.length, bytes.length - 1);
+                System.arraycopy(sourceBytes, 1, destBytes, 1 + destBytes.length - sourceBytes.length, sourceBytes.length - 1);
             }
         }
-        results.add(valBytes);
+        results.add(destBytes);
     }
 
     private static BigInteger decodeInteger(V3Type type, ByteBuffer bb) {
@@ -206,15 +206,26 @@ public final class V3 {
             for (boolean b : booleans) {
                 binary.append(b ? '1' : '0');
             }
-            encodeInteger(type, new BigInteger(binary.toString(), 2), results);
+            final BigInteger bi = new BigInteger(binary.toString(), 2);
+            byte[] biBytes = bi.toByteArray();
+            if (biBytes[0] == 0x00) biBytes = Arrays.copyOfRange(biBytes, 1, biBytes.length);
+            final byte[] rlp = rlp(biBytes);
+            results.add(rlp);
+//            encodeInteger(Integers.roundLengthUp(bi.bitLength(), Byte.SIZE) / Byte.SIZE, bi, results);
         }
     }
 
     private static boolean[] decodeBooleanArray(final V3Type type, ByteBuffer bb) {
-        final byte[] lenBytes = unrlp(bb);
-        final int len = type.arrayLen == -1 ? Integers.getInt(lenBytes, 0, lenBytes.length) : type.arrayLen;
+        if (type.arrayLen == 0) return new boolean[0];
+        final int len;
+        if (type.arrayLen == -1) {
+            final byte[] lenBytes = unrlp(bb);
+            len = Integers.getInt(lenBytes, 0, lenBytes.length);
+        } else {
+            len = type.arrayLen;
+        }
         if (len == 0) return new boolean[0];
-        final String binaryStr = new BigInteger(unrlp(bb)).toString(2);
+        final String binaryStr = new BigInteger(1, unrlp(bb)).toString(2);
         final int numChars = binaryStr.length();
         final int impliedZeros = len - numChars;
         final boolean[] booleans = new boolean[len];
@@ -244,7 +255,7 @@ public final class V3 {
             results.add(rlp(Integers.toBytes(arr.length)));
         }
         for (BigInteger bigInteger : arr) {
-            encodeInteger(type.elementType, bigInteger, results);
+            encodeInteger(type.elementType.bitLen / Byte.SIZE, bigInteger, results);
         }
     }
 
