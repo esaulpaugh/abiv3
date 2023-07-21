@@ -32,6 +32,8 @@ public final class Main {
         test(62, TypeFactory.create("(uint8)"), BigInteger.valueOf(0xfeL));
         test(63, TypeFactory.create("(uint8,())"), BigInteger.valueOf(0xfeL), new Object[0]);
         test(64, TypeFactory.create("(bytes,bytes1)"), new byte[3], new byte[1]);
+        test(65, TypeFactory.create("(((bool),int8))"), (Object) new Object[] { new Object[] { false }, BigInteger.valueOf(99L) });
+        test(66, TypeFactory.create("((bool)[])"), (Object) new Object[] { new Object[] { false } });
         test(319, TypeFactory.create("((bytes))"), (Object) new Object[] { new byte[0] });
         test(4, TypeFactory.create("((int16[]),(uint24[2]))"),
                 new Object[] {

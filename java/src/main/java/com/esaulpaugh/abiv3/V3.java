@@ -179,8 +179,8 @@ public final class V3 {
         case V3Type.TYPE_CODE_BOOLEAN: encodeBooleanArray(type, (boolean[]) arr, results); return;
         case V3Type.TYPE_CODE_BYTE: encodeByteArray(type, arr, results); return;
         case V3Type.TYPE_CODE_BIG_INTEGER: encodeIntegerArray(type, (BigInteger[]) arr, results); return;
-        case V3Type.TYPE_CODE_ARRAY: encodeObjectArray(type, (Object[]) arr, results); return;
-        case V3Type.TYPE_CODE_TUPLE: encodeTuple(type, (Object[]) arr, results); return;
+        case V3Type.TYPE_CODE_ARRAY:
+        case V3Type.TYPE_CODE_TUPLE: encodeObjectArray(type, (Object[]) arr, results); return;
         default: throw new AssertionError();
         }
     }
@@ -191,8 +191,8 @@ public final class V3 {
         case V3Type.TYPE_CODE_BOOLEAN: return decodeBooleanArray(type, bb);
         case V3Type.TYPE_CODE_BYTE: return decodeByteArray(type, bb);
         case V3Type.TYPE_CODE_BIG_INTEGER: return decodeIntegerArray(type, bb);
-        case V3Type.TYPE_CODE_ARRAY: return decodeObjectArray(type, bb);
-        case V3Type.TYPE_CODE_TUPLE: return decodeTuple(type, bb);
+        case V3Type.TYPE_CODE_ARRAY:
+        case V3Type.TYPE_CODE_TUPLE: return decodeObjectArray(type, bb);
         default: throw new AssertionError();
         }
     }
