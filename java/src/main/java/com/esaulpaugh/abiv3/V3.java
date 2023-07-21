@@ -28,16 +28,13 @@ public final class V3 {
 
     private V3() {}
 
-    private static final byte[] TRUE = new byte[] { 0x1 };
-    private static final byte[] FALSE = new byte[] { 0x00 };
-
     static final byte VERSION_ID = 0;
     static final byte VERSION_MASK = (byte) 0b1100_0000;
     static final byte ID_MASK = (byte) ~VERSION_MASK; // 0x3f (decimal 63), the complement of VERSION_MASK
 
     public static byte[] encodeFunction(int functionNumber, V3Type tupleType, Object[] vals) {
-        List<byte[]> results = new ArrayList<>();
-        byte[][] header = header(functionNumber);
+        final List<byte[]> results = new ArrayList<>();
+        final byte[][] header = header(functionNumber);
         results.add(header[0]);
         if (header.length == 2) {
             results.add(header[1]);
@@ -47,7 +44,7 @@ public final class V3 {
         for (byte[] result : results) {
             len += result.length;
         }
-        ByteBuffer encoding = ByteBuffer.allocate(len);
+        final ByteBuffer encoding = ByteBuffer.allocate(len);
         for (byte[] result : results) {
             encoding.put(result);
         }
@@ -72,9 +69,7 @@ public final class V3 {
                 fnNumber = first;
             } else {
                 int len = first - DataType.STRING_SHORT.offset;
-                byte[] fnNumBytes = new byte[len];
-                bb.get(fnNumBytes);
-                fnNumber = ID_MASK + Integers.getLong(fnNumBytes, 0, len);
+                fnNumber = ID_MASK + Integers.getLong(readBytes(len, bb), 0, len);
             }
             if (fnNumber < 0) throw new AssertionError();
         }
@@ -139,8 +134,7 @@ public final class V3 {
     }
 
     private static BigInteger decodeInteger(V3Type type, ByteBuffer bb) {
-        final byte[] bytes = new byte[type.bitLen / Byte.SIZE];
-        bb.get(bytes);
+        final byte[] bytes = readBytes(type.bitLen / Byte.SIZE, bb);
         return type.unsigned
                 ? new BigInteger(1, bytes)
                 : new BigInteger(bytes);
@@ -203,7 +197,7 @@ public final class V3 {
             results.add(rlp(Integers.toBytes(booleans.length)));
         }
         if (booleans.length > 0) {
-            StringBuilder binary = new StringBuilder("+");
+            final StringBuilder binary = new StringBuilder("+");
             for (boolean b : booleans) {
                 binary.append(b ? '1' : '0');
             }
@@ -217,15 +211,8 @@ public final class V3 {
     }
 
     private static boolean[] decodeBooleanArray(final V3Type type, ByteBuffer bb) {
-        if (type.arrayLen == 0) return new boolean[0];
         final int len;
-        if (type.arrayLen == -1) {
-            final byte[] lenBytes = unrlp(bb);
-            len = Integers.getInt(lenBytes, 0, lenBytes.length);
-        } else {
-            len = type.arrayLen;
-        }
-        if (len == 0) return new boolean[0];
+        if (type.arrayLen == 0 || (len = getLength(type, bb)) == 0) return new boolean[0];
         final String binaryStr = new BigInteger(1, unrlp(bb)).toString(2);
         final int numChars = binaryStr.length();
         final int impliedZeros = len - numChars;
@@ -239,15 +226,20 @@ public final class V3 {
     }
 
     private static void encodeByteArray(V3Type type, Object arr, List<byte[]> results) {
-        byte[] bytes = type.isString ? ((String) arr).getBytes(StandardCharsets.UTF_8) : (byte[]) arr;
+        final byte[] bytes = type.isString ? ((String) arr).getBytes(StandardCharsets.UTF_8) : (byte[]) arr;
         validateLength(type.arrayLen, bytes.length);
-        results.add(rlp(bytes));
+        if (type.arrayLen == -1) {
+            results.add(rlp(bytes));
+        } else {
+            results.add(bytes);
+        }
     }
 
     private static Object decodeByteArray(V3Type type, ByteBuffer bb) {
+        final byte[] raw = type.arrayLen == -1 ? unrlp(bb) : readBytes(type.arrayLen, bb);
         return type.isString
-                ? new String(unrlp(bb), StandardCharsets.UTF_8)
-                : unrlp(bb);
+                ? new String(raw, StandardCharsets.UTF_8)
+                : raw;
     }
 
     private static void encodeIntegerArray(V3Type type, BigInteger[] arr, List<byte[]> results) {
@@ -261,13 +253,7 @@ public final class V3 {
     }
 
     private static BigInteger[] decodeIntegerArray(V3Type type, ByteBuffer bb) {
-        BigInteger[] bigInts;
-        if (type.arrayLen == -1) {
-            final byte[] prefix = unrlp(bb);
-            bigInts = new BigInteger[Integers.getInt(prefix, 0, prefix.length)];
-        } else {
-            bigInts = new BigInteger[type.arrayLen];
-        }
+        final BigInteger[] bigInts = new BigInteger[getLength(type, bb)];
         for (int i = 0; i < bigInts.length; i++) {
             bigInts[i] = decodeInteger(type.elementType, bb);
         }
@@ -305,23 +291,18 @@ public final class V3 {
             return new byte[] { lead };
         }
         if (DataType.STRING_SHORT == type) {
-            byte[] bytes = new byte[lead - DataType.STRING_SHORT.offset];
-            bb.get(bytes);
-            return bytes;
+            return readBytes(lead - DataType.STRING_SHORT.offset, bb);
         }
         if (DataType.LIST_SHORT == type) throw new Error();
         if (DataType.LIST_LONG == type) throw new Error();
         final int lengthOfLength = lead - type.offset;
-        final byte[] length = new byte[lengthOfLength];
-        bb.get(length);
+        final byte[] length = readBytes(lengthOfLength, bb);
         final int dataLength = Integers.getInt(length, 0, lengthOfLength);
         if (dataLength < DataType.MIN_LONG_DATA_LEN) {
             throw new IllegalArgumentException("long element data length must be " + DataType.MIN_LONG_DATA_LEN
                     + " or greater; found: " + dataLength);
         }
-        final byte[] data = new byte[dataLength];
-        bb.get(data);
-        return data;
+        return readBytes(dataLength, bb);
     }
 
     private static byte[] encodeLen1String(byte first) {
@@ -345,17 +326,25 @@ public final class V3 {
     }
 
     private static Object decodeObjectArray(V3Type type, ByteBuffer bb) {
-        final int len;
-        if (type.arrayLen == -1) {
-            final byte[] prefix = unrlp(bb);
-            len = Integers.getInt(prefix, 0, prefix.length);
-        } else {
-            len = type.arrayLen;
-        }
+        final int len = getLength(type, bb);
         final Object[] in = (Object[]) Array.newInstance(type.elementType.clazz, len); // reflection
         for (int i = 0; i < in.length; i++) {
             in[i] = decode(type.elementType, bb);
         }
         return in;
+    }
+
+    private static int getLength(V3Type type, ByteBuffer bb) {
+        if (type.arrayLen == -1) {
+            final byte[] prefix = unrlp(bb);
+            return Integers.getInt(prefix, 0, prefix.length);
+        }
+        return type.arrayLen;
+    }
+
+    private static byte[] readBytes(int n, ByteBuffer bb) {
+        final byte[] bytes = new byte[n];
+        bb.get(bytes);
+        return bytes;
     }
 }
