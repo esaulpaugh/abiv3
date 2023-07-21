@@ -20,7 +20,7 @@ RLP spec: https://github.com/ethereum/wiki/wiki/RLP
 
 The first (leftmost) two bits of the first byte are the version number in unsigned big-endian two's complement format. This is version 0. Versions 1-3 are reserved to accommodate future encoding formats.
 
-The last (rightmost) six bits of the first byte are the function identifier, an unsigned big-endian integer in two's complement which is used instead of a four-byte hash selector. If the function ID is 63 or larger, all six bits are set and the RLP encoding of function ID minus 63 is appended after byte zero.
+The last (rightmost) six bits of the first byte are the function identifier, an unsigned big-endian integer which is used instead of a four-byte hash selector. If the function ID is 63 or larger, all six bits are set and the RLP encoding of function ID minus 63 is appended after byte zero.
 
 ### Arguments:
 
@@ -28,19 +28,19 @@ Immediately following byte zero and the function ID, arguments are encoded accor
 
 #### Tuple types:
 
-Tuples are encoded as merely the concatenation of the encodings of the elements.
+Tuples are encoded as an RLP list surrounding the concatenation of the encodings of its elements. The arguments, collectively, are not considered a tuple for purposes of encoding.
 
 #### Base types:
 
 Booleans are encoded as one byte: either `0x01` for true or `0x00` for false.
 
-Integers are encoded in big-endian two's complement and are sign-extended to the width of the datatype. For example, `0xfffffe` and `0x000005` are the encodings of negative two and five respectively given an `int24` datatype.
+Non-negative integers are encoded as usual according to the RLP specification. Negative integers are sign-extended to the width of the datatype. For example, `0xffffff` for negative one as an `int24`.
 
 #### Array types:
 
 #### Byte array types (including `string` which is utf-8 bytes):
 
-Static byte arrays are encoded as merely the byte string itself. Dynamic-length byte arrays are encoded as the RLP encoding of the byte string.
+Byte arrays are encoded as an RLP string as per the RLP specification.
 
 ##### Boolean array types:
 
@@ -50,11 +50,17 @@ Dynamic-length boolean arrays are encoded as if a static boolean array appended 
 
 For example, `[false, false, true, false]` would encode as `0x02` if a static boolean array and as `0x0402` if a dynamic boolean array.
 
-##### All other array types:
+##### Integer array types:
 
-Arrays are encoded as the concatenation of the encodings of the elements.
+Integer arrays may be encoded in two ways:
 
-If the array type is dynamic (i.e. variable-length and not statically-sized), the array length, in elements, must encoded RLP-wise and prepended to the encodings of the elements.
+Variable-width, as if a byte array where the first byte is `0x00` and the remaining bytes are the concatenations of the encodings of the elements (as if they were base types).
+
+Fixed-width, as if a byte array where the first byte is the byte width, `w`, of the elements which follow, raw, in order, and `w` bytes each. Encoders SHOULD determine the byte width by the width of the widest element.
+
+##### All other array types (tuple arrays, multidimensional arrays):
+
+Arrays of objects are encoded as if a tuple containing the array elements.
 
 ### Versioning:
 
@@ -66,7 +72,7 @@ Version zero (this version) could also specify an arbitrarily large number of fu
 
 While the current ABIv2 spec permits encodings not of length 4 modulo 32 (because dynamic element offsets may be any arbitrary value), in practice, encodings are almost invariably of length 4 modulo 32.
 
-ABIv3 encodings therefore are forbidden to be of length 4 mod 32, and decoders MUST reject any such encodings. It is the responsibility of the encoder to append a final zero-byte if the encoding would otherwise have this property. Decoders SHOULD fail if unconsumed bytes remain after the last parameter has been decoded unless the length of the encoding is 5 mod 32 and only one unconsumed byte exists and that byte's value is zero.
+ABIv3 encodings therefore are forbidden to be of length 4 mod 32, and decoders MUST reject any such encodings. It is the responsibility of the encoder to avoid this by appending a final zero-byte if the encoding would otherwise have this property. Decoders SHOULD fail if unconsumed bytes remain after the last parameter has been decoded unless the length of the encoding is 5 mod 32 and only one unconsumed byte exists and that byte's value is zero.
 
 ## Footnotes
 

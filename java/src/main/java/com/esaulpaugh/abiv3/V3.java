@@ -112,10 +112,11 @@ public final class V3 {
                 results.add(signExtendNegative(sourceBytes, byteLen));
                 return;
             }
+            final int padLength = destBytes.length - sourceBytes.length;
             if (sourceBytes[0] != 0) {
-                System.arraycopy(sourceBytes, 0, destBytes, destBytes.length - sourceBytes.length, sourceBytes.length);
+                System.arraycopy(sourceBytes, 0, destBytes, padLength, sourceBytes.length);
             } else {
-                System.arraycopy(sourceBytes, 1, destBytes, 1 + destBytes.length - sourceBytes.length, sourceBytes.length - 1);
+                System.arraycopy(sourceBytes, 1, destBytes, padLength + 1, sourceBytes.length - 1);
             }
         }
         results.add(destBytes);
