@@ -44,7 +44,7 @@ Static byte arrays are encoded as merely the byte string itself. Dynamic-length 
 
 ##### Boolean array types:
 
-A static boolean array is encoded as if it were an integer, specifically the (big-endian two's complement) unsigned integer formed by the array elements interpreted left to right as bits where true values are `1` and false values are `0`. The integer's width in bytes is the smallest whole number greater than or equal to the number of elements divided by 8. Within these bytes, the bits representing the array elements are right-aligned.
+A static boolean array is encoded as if it were an integer, specifically the (big-endian two's complement) unsigned integer formed by the array elements interpreted left to right as bits where true values are `1` and false values are `0`. The integer's width in bytes is the smallest whole number greater than or equal to the number of elements divided by 8. Within these bytes, the bits representing the array elements are contiguous and right-aligned.
 
 Dynamic-length boolean arrays are encoded as if a static boolean array appended to the RLP encoding of the array length.
 
