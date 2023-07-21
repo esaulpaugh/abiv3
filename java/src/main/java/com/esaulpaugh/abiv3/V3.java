@@ -171,15 +171,15 @@ public final class V3 {
     private static void encodeBooleanArray(V3Type type, boolean[] booleans, List<byte[]> results) {
         validateLength(type.arrayLen, booleans.length);
         if (type.arrayLen == -1) {
-            results.add(rlp(Integers.toBytes(booleans.length)));
+            results.add(rlp(booleans.length));
         }
         if (booleans.length > 0) {
             int i = 0;
             while (!booleans[i]) {
                 i++;
             }
-            final byte[] bits = new byte[Integers.roundLengthUp(booleans.length - i, Byte.SIZE) / Byte.SIZE];
             final int n = booleans.length - i;
+            final byte[] bits = new byte[Integers.roundLengthUp(n, Byte.SIZE) / Byte.SIZE];
             for (int k = 0; k < n; k++) {
                 if (booleans[booleans.length - 1 - k]) {
                     final int idx = bits.length - 1 - (k / Byte.SIZE);
@@ -225,7 +225,7 @@ public final class V3 {
     private static void encodeIntegerArray(V3Type type, BigInteger[] arr, List<byte[]> results) {
         validateLength(type.arrayLen, arr.length);
         if (type.arrayLen == -1) {
-            results.add(rlp(Integers.toBytes(arr.length)));
+            results.add(rlp(arr.length));
         }
         for (BigInteger bigInteger : arr) {
             encodeInteger(type.elementType.bitLen / Byte.SIZE, bigInteger, results);
@@ -243,7 +243,7 @@ public final class V3 {
     private static void encodeObjectArray(V3Type type, Object[] objects, List<byte[]> results) {
         validateLength(type.arrayLen, objects.length);
         if (type.arrayLen == -1) {
-            results.add(rlp(Integers.toBytes(objects.length)));
+            results.add(rlp(objects.length));
         }
         for (Object object : objects) {
             encode(type.elementType, object, results);
@@ -257,6 +257,10 @@ public final class V3 {
             in[i] = decode(type.elementType, bb);
         }
         return in;
+    }
+
+    public static byte[] rlp(int value) {
+        return rlp(Integers.toBytes(value));
     }
 
     /**
@@ -316,7 +320,7 @@ public final class V3 {
                             : Integers.toBytes(functionNumber)
             };
         }
-        return new byte[][] { single(ID_MASK), rlp(Integers.toBytes(functionNumber - ID_MASK)) };
+        return new byte[][] { single(ID_MASK), rlp(functionNumber - ID_MASK) };
     }
 
     private static byte[] single(byte val) {
