@@ -15,6 +15,7 @@
 */
 package com.esaulpaugh.abiv3;
 
+import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -175,11 +176,11 @@ public final class V3 {
     private static void encodeArray(V3Type type, Object arr, List<byte[]> results) {
         final V3Type et = type.elementType;
         switch (et.typeCode) {
-        case V3Type.TYPE_CODE_BOOLEAN: serializeBooleanArray(type, (boolean[]) arr, results); return;
+        case V3Type.TYPE_CODE_BOOLEAN: encodeBooleanArray(type, (boolean[]) arr, results); return;
         case V3Type.TYPE_CODE_BYTE: encodeByteArray(type, arr, results); return;
         case V3Type.TYPE_CODE_BIG_INTEGER: encodeIntegerArray(type, (BigInteger[]) arr, results); return;
-        case V3Type.TYPE_CODE_ARRAY:
-        case V3Type.TYPE_CODE_TUPLE: serializeObjectArray(type, (Object[]) arr, results); return;
+        case V3Type.TYPE_CODE_ARRAY: encodeObjectArray(type, (Object[]) arr, results); return;
+        case V3Type.TYPE_CODE_TUPLE: encodeTuple(type, (Object[]) arr, results); return;
         default: throw new AssertionError();
         }
     }
@@ -190,13 +191,13 @@ public final class V3 {
         case V3Type.TYPE_CODE_BOOLEAN: return decodeBooleanArray(type, bb);
         case V3Type.TYPE_CODE_BYTE: return decodeByteArray(type, bb);
         case V3Type.TYPE_CODE_BIG_INTEGER: return decodeIntegerArray(type, bb);
-        case V3Type.TYPE_CODE_ARRAY:
+        case V3Type.TYPE_CODE_ARRAY: return decodeObjectArray(type, bb);
         case V3Type.TYPE_CODE_TUPLE: return decodeTuple(type, bb);
         default: throw new AssertionError();
         }
     }
 
-    private static void serializeBooleanArray(V3Type type, boolean[] booleans, List<byte[]> results) {
+    private static void encodeBooleanArray(V3Type type, boolean[] booleans, List<byte[]> results) {
         validateLength(type.arrayLen, booleans.length);
         if (type.arrayLen == -1) {
             results.add(rlp(Integers.toBytes(booleans.length)));
@@ -333,10 +334,28 @@ public final class V3 {
         return new byte[] { first };
     }
 
-    private static void serializeObjectArray(V3Type type, Object[] objects, List<byte[]> results) {
+    private static void encodeObjectArray(V3Type type, Object[] objects, List<byte[]> results) {
         validateLength(type.arrayLen, objects.length);
+        if (type.arrayLen == -1) {
+            results.add(rlp(Integers.toBytes(objects.length)));
+        }
         for (Object object : objects) {
             encode(type.elementType, object, results);
         }
+    }
+
+    private static Object decodeObjectArray(V3Type type, ByteBuffer bb) {
+        final int len;
+        if (type.arrayLen == -1) {
+            final byte[] prefix = unrlp(bb);
+            len = Integers.getInt(prefix, 0, prefix.length);
+        } else {
+            len = type.arrayLen;
+        }
+        final Object[] in = (Object[]) Array.newInstance(type.elementType.clazz, len); // reflection
+        for (int i = 0; i < in.length; i++) {
+            in[i] = decode(type.elementType, bb);
+        }
+        return in;
     }
 }

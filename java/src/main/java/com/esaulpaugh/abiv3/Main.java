@@ -46,6 +46,8 @@ public final class Main {
         test(21, TypeFactory.create("(bool[0])"), (Object) new boolean[0] );
         test(100, TypeFactory.create("(bool[])"), (Object) new boolean[] { true, true, false } );
         test(0, TypeFactory.create("(bool[2])"), (Object) new boolean[] { true, false } );
+        test(1, TypeFactory.create("(string[])"), (Object) new String[] { "", "false" } );
+        test(2, TypeFactory.create("(string[3])"), (Object) new String[] { "d", "\u0009", "  " } );
 
 //        testSingle("(address,uint256,uint256,address,address,address,uint256,uint256,uint8,uint256,uint256,bytes32,uint256,bytes32,bytes32,uint256,(uint256,address)[],bytes)",
 //                new Object[] {
