@@ -32,6 +32,7 @@ public final class Main {
         test(64, TypeFactory.create("(uint8)"), BigInteger.valueOf(0xfeL));
         test(60, TypeFactory.create("(uint8,())"), BigInteger.valueOf(0xfeL), new Object[0]);
         test(100, TypeFactory.create("(bytes,bytes1)"), new byte[3], new byte[1]);
+        test(319, TypeFactory.create("((bytes))"), (Object) new Object[] { new byte[0] });
 
 //        testSingle("(address,uint256,uint256,address,address,address,uint256,uint256,uint8,uint256,uint256,bytes32,uint256,bytes32,bytes32,uint256,(uint256,address)[],bytes)",
 //                new Object[] {

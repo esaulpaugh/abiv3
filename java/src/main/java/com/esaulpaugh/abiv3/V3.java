@@ -15,9 +15,6 @@
 */
 package com.esaulpaugh.abiv3;
 
-import com.joemelsha.crypto.hash.Keccak;
-
-import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -91,7 +88,7 @@ public final class V3 {
             }
             return new byte[][] { Integers.toBytes(functionNumber) };
         }
-        return new byte[][] { new byte[] { ID_MASK }, Integers.toBytes(functionNumber - ID_MASK) };
+        return new byte[][] { new byte[] { ID_MASK }, rlp(Integers.toBytes(functionNumber - ID_MASK)) };
     }
 
     private static void encode(V3Type t, Object val, List<byte[]> results) {
