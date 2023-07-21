@@ -106,7 +106,7 @@ public final class Main {
         );
 
         test(
-                new V3Type[] { TypeFactory.create("(string,bool,bool,int72)[2]"), new V3Type("uint8", true, 8) },
+                TypeFactory.create("((string,bool,bool,int72)[2],uint8)"),
                 new Object[] { new Object[] { "A", false, true, BigInteger.TEN }, new Object[] { "B", true, false, BigInteger.ONE } },
                 BigInteger.valueOf(255L)
         );
@@ -128,35 +128,57 @@ public final class Main {
 
         final BigInteger addr0 = new BigInteger("e102030405060708090a0b0c0d0e0f0f0f0f0f0d", 16);
         final BigInteger addr1 = new BigInteger("b1b2b3b4b5b6b7b8b90a0b0c0d0e0c0c0c0c0c0c", 16);
-        test(new V3Type[] { TypeFactory.create("address"), TypeFactory.create("int16") }, addr0, BigInteger.valueOf(-2L));
+        test(TypeFactory.create("(address,int16)"), addr0, BigInteger.valueOf(-2L));
         test(
-                new V3Type[] { TypeFactory.create("(address)"), TypeFactory.create("(address,address)") },
+                TypeFactory.create("((address),(address,address))"),
                 new Object[] { addr0 },
                 new Object[] { addr1, addr0 }
         );
-    }
-
-    private static void testSingle(String typeStr, Object value) {
-        test(new V3Type[] { TypeFactory.create(typeStr) }, value);
+        // ------------------------------------------
+        test(62, TypeFactory.create("(uint8)"), BigInteger.valueOf(0xfeL));
+        test(63, TypeFactory.create("(uint8,())"), BigInteger.valueOf(0xccL), new Object[0]);
+        test(64, TypeFactory.create("(bytes,bytes1)"), new byte[3], new byte[1]);
+        test(65, TypeFactory.create("(((bool),int8))"), (Object) new Object[] { new Object[] { false }, BigInteger.valueOf(99L) });
+        test(66, TypeFactory.create("((bool)[])"), (Object) new Object[] { new Object[] { false } });
+        test(319, TypeFactory.create("((bytes))"), (Object) new Object[] { new byte[0] });
+        test(4, TypeFactory.create("((int16[]),(uint24[2]))"),
+                new Object[] {
+                        new BigInteger[]{ BigInteger.TEN }
+                },
+                new Object[] {
+                        new BigInteger[]{
+                                BigInteger.ONE, BigInteger.valueOf(3L)
+                        }
+                }
+        );
+        test(21, TypeFactory.create("(bool[0])"), (Object) new boolean[0] );
+        test(100, TypeFactory.create("(bool[])"), (Object) new boolean[] { true, true, false } );
+        test(0, TypeFactory.create("(bool[2])"), (Object) new boolean[] { true, false } );
+        test(1, TypeFactory.create("(string[])"), (Object) new String[] { "", "false" } );
+        testSingle("string[3]", new String[] { "d", "\u0009", "  " } );
     }
 
     private static void testSingle(V3Type type, Object value) {
-        test(new V3Type[] { type }, value);
+        testSingle(type.canonicalType, value);
     }
 
-    private static void test(final V3Type[] schema, final Object... values) {
-        test(RANDOM.nextInt(260), schema, values);
+    private static void testSingle(String typeStr, Object value) {
+        test(TypeFactory.create("(" + typeStr + ")"), value);
     }
 
-    private static void test(final int fnNumber, final V3Type[] schema, final Object... values) {
-        final byte[] rlp = V3.toRLP(fnNumber, schema, values);
-        final String calldataStr = slowHex(rlp); // new BigInteger(1, rlp).toString(16);
+    private static void test(final V3Type tupleType, final Object... values) {
+        test(RANDOM.nextInt(260), tupleType, values);
+    }
+
+    private static void test(final int fnNumber, final V3Type tupleType, final Object... values) {
+        final byte[] encoding = V3.encodeFunction(fnNumber, tupleType, values);
+        final String calldataStr = slowHex(encoding); // new BigInteger(1, rlp).toString(16);
         System.out.println("case" + caseNumber++ + ":\t\t"
                 + fnNumber + "\t\t"
-                + V3.createSignature("foo", schema) + " --> "
+                + "foo" + tupleType.canonicalType + " --> "
                 + calldataStr + "\t\t"
-                + " (len " + rlp.length + ")");
-        final Object[] decoded = V3.fromRLP(schema, rlp);
+                + " (len " + encoding.length + ")");
+        final Object[] decoded = V3.decodeFunction(tupleType, encoding);
         final boolean eq = Arrays.deepEquals(values, decoded);
         if (!eq) {
             throw new AssertionError(values + " != " + decoded);
