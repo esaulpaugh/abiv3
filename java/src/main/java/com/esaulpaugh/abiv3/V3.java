@@ -65,7 +65,7 @@ public final class V3 {
             if (first == 0x00 || type == DataType.STRING_LONG || type == DataType.LIST_SHORT || type == DataType.LIST_LONG) {
                 throw new IllegalArgumentException("invalid function ID format");
             }
-            if (type == DataType.SINGLE_BYTE) {
+            if (DataType.SINGLE_BYTE == type) {
                 fnNumber = first;
             } else {
                 int len = first - DataType.STRING_SHORT.offset;
@@ -74,17 +74,6 @@ public final class V3 {
             if (fnNumber < 0) throw new AssertionError();
         }
         return decodeTuple(tupleType, bb);
-    }
-
-    private static byte[][] header(int functionNumber) {
-        if (functionNumber < 0) throw new IllegalArgumentException();
-        if (functionNumber < ID_MASK) {
-            if (functionNumber == 0) {
-                return new byte[][] { new byte[] { 0 } };
-            }
-            return new byte[][] { Integers.toBytes(functionNumber) };
-        }
-        return new byte[][] { new byte[] { ID_MASK }, rlp(Integers.toBytes(functionNumber - ID_MASK)) };
     }
 
     private static void encode(V3Type t, Object val, List<byte[]> results) {
@@ -108,7 +97,7 @@ public final class V3 {
     }
 
     private static void encodeBoolean(boolean val, List<byte[]> results) {
-        results.add(new byte[] { val ? (byte) 0x01 : (byte) 0x00 });
+        results.add(single(val ? (byte) 0x01 : (byte) 0x00));
     }
 
     public static boolean decodeBoolean(ByteBuffer bb) {
@@ -120,8 +109,7 @@ public final class V3 {
         if (val.signum() != 0) {
             final byte[] sourceBytes = val.toByteArray();
             if (val.signum() < 0) {
-                byte[] extended = signExtendNegative(sourceBytes, byteLen);
-                results.add(extended);
+                results.add(signExtendNegative(sourceBytes, byteLen));
                 return;
             }
             if (sourceBytes[0] != 0) {
@@ -140,13 +128,6 @@ public final class V3 {
                 : new BigInteger(bytes);
     }
 
-    private static byte[] signExtendNegative(final byte[] negative, final int newWidth) {
-        final byte[] extended = new byte[newWidth];
-        Arrays.fill(extended, (byte) 0xff);
-        System.arraycopy(negative, 0, extended, newWidth - negative.length, negative.length);
-        return extended;
-    }
-
     private static void encodeTuple(V3Type tupleType, Object[] tuple, List<byte[]> results) {
         validateLength(tupleType.elementTypes.length, tuple.length);
         final Object[] out = new Object[tupleType.elementTypes.length];
@@ -161,10 +142,6 @@ public final class V3 {
             out[i] = decode(tupleType.elementTypes[i], bb);
         }
         return out;
-    }
-
-    private static void validateLength(int expected, int actual) {
-        if (expected != actual && expected != -1) throw new IllegalArgumentException();
     }
 
     private static void encodeArray(V3Type type, Object arr, List<byte[]> results) {
@@ -204,9 +181,7 @@ public final class V3 {
             final BigInteger bi = new BigInteger(binary.toString(), 2);
             byte[] biBytes = bi.toByteArray();
             if (biBytes[0] == 0x00) biBytes = Arrays.copyOfRange(biBytes, 1, biBytes.length);
-            final byte[] rlp = rlp(biBytes);
-            results.add(rlp);
-//            encodeInteger(Integers.roundLengthUp(bi.bitLength(), Byte.SIZE) / Byte.SIZE, bi, results);
+            results.add(rlp(biBytes));
         }
     }
 
@@ -260,61 +235,6 @@ public final class V3 {
         return bigInts;
     }
 
-    /**
-     * Returns the RLP encoding of the given byte string.
-     *
-     * @param byteString the byte string to be encoded
-     */
-    public static byte[] rlp(byte[] byteString) {
-        final int dataLen = byteString.length;
-        if (dataLen < DataType.MIN_LONG_DATA_LEN) {
-            if (dataLen == 1) {
-                return encodeLen1String(byteString[0]);
-            }
-            final ByteBuffer bb = ByteBuffer.allocate(1 + byteString.length);
-            bb.put((byte) (DataType.STRING_SHORT.offset + dataLen));
-            bb.put(byteString);
-            return bb.array();
-        }
-        final int lenOfLen = Integers.len(dataLen);
-        final ByteBuffer bb = ByteBuffer.allocate(1 + lenOfLen + byteString.length);
-        bb.put((byte) (DataType.STRING_LONG.offset + lenOfLen));
-        Integers.putLong(dataLen, bb);
-        bb.put(byteString);
-        return bb.array();
-    }
-
-    private static byte[] unrlp(ByteBuffer bb) {
-        final byte lead = bb.get();
-        final DataType type = DataType.type(lead);
-        if (DataType.SINGLE_BYTE == type) {
-            return new byte[] { lead };
-        }
-        if (DataType.STRING_SHORT == type) {
-            return readBytes(lead - DataType.STRING_SHORT.offset, bb);
-        }
-        if (DataType.LIST_SHORT == type) throw new Error();
-        if (DataType.LIST_LONG == type) throw new Error();
-        final int lengthOfLength = lead - type.offset;
-        final byte[] length = readBytes(lengthOfLength, bb);
-        final int dataLength = Integers.getInt(length, 0, lengthOfLength);
-        if (dataLength < DataType.MIN_LONG_DATA_LEN) {
-            throw new IllegalArgumentException("long element data length must be " + DataType.MIN_LONG_DATA_LEN
-                    + " or greater; found: " + dataLength);
-        }
-        return readBytes(dataLength, bb);
-    }
-
-    private static byte[] encodeLen1String(byte first) {
-        if (first < 0x00) { // same as (first & 0xFF) >= 0x80
-            return new byte[] {
-                    (byte) (DataType.STRING_SHORT.offset + 1),
-                    first
-            };
-        }
-        return new byte[] { first };
-    }
-
     private static void encodeObjectArray(V3Type type, Object[] objects, List<byte[]> results) {
         validateLength(type.arrayLen, objects.length);
         if (type.arrayLen == -1) {
@@ -332,6 +252,81 @@ public final class V3 {
             in[i] = decode(type.elementType, bb);
         }
         return in;
+    }
+
+    /**
+     * Returns the RLP encoding of the given byte string.
+     *
+     * @param byteString the byte string to be encoded
+     */
+    public static byte[] rlp(byte[] byteString) {
+        final int dataLen = byteString.length;
+        final ByteBuffer bb;
+        if (dataLen < DataType.MIN_LONG_DATA_LEN) {
+            if (dataLen == 1) {
+                final byte first = byteString[0];
+                return first < 0x00
+                        ? new byte[] { (byte) (DataType.STRING_SHORT.offset + 1), first }
+                        : single(first);
+            }
+            bb = ByteBuffer.allocate(1 + byteString.length);
+            bb.put((byte) (DataType.STRING_SHORT.offset + dataLen));
+            bb.put(byteString);
+        } else {
+            final int lenOfLen = Integers.len(dataLen);
+            bb = ByteBuffer.allocate(1 + lenOfLen + byteString.length);
+            bb.put((byte) (DataType.STRING_LONG.offset + lenOfLen));
+            Integers.putLong(dataLen, bb);
+            bb.put(byteString);
+        }
+        return bb.array();
+    }
+
+    private static byte[] unrlp(ByteBuffer bb) {
+        final byte lead = bb.get();
+        final DataType type = DataType.type(lead);
+        if (DataType.SINGLE_BYTE == type) {
+            return single(lead);
+        }
+        if (DataType.STRING_SHORT == type) {
+            return readBytes(lead - DataType.STRING_SHORT.offset, bb);
+        }
+        if (DataType.LIST_SHORT == type) throw new Error();
+        if (DataType.LIST_LONG == type) throw new Error();
+        final int lengthOfLength = lead - type.offset;
+        final int dataLength = Integers.getInt(readBytes(lengthOfLength, bb), 0, lengthOfLength);
+        if (dataLength < DataType.MIN_LONG_DATA_LEN) {
+            throw new IllegalArgumentException("long element data length must be " + DataType.MIN_LONG_DATA_LEN
+                    + " or greater; found: " + dataLength);
+        }
+        return readBytes(dataLength, bb);
+    }
+
+    private static byte[][] header(int functionNumber) {
+        if (functionNumber < 0) throw new IllegalArgumentException();
+        if (functionNumber < ID_MASK) {
+            return new byte[][] {
+                    functionNumber == 0
+                            ? single((byte)0)
+                            : Integers.toBytes(functionNumber)
+            };
+        }
+        return new byte[][] { single(ID_MASK), rlp(Integers.toBytes(functionNumber - ID_MASK)) };
+    }
+
+    private static byte[] single(byte val) {
+        return new byte[] { val };
+    }
+
+    private static byte[] signExtendNegative(final byte[] negative, final int newWidth) {
+        final byte[] extended = new byte[newWidth];
+        Arrays.fill(extended, (byte) 0xff);
+        System.arraycopy(negative, 0, extended, newWidth - negative.length, negative.length);
+        return extended;
+    }
+
+    private static void validateLength(int expected, int actual) {
+        if (expected != actual && expected != -1) throw new IllegalArgumentException();
     }
 
     private static int getLength(V3Type type, ByteBuffer bb) {
