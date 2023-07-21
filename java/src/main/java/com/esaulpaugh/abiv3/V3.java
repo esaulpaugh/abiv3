@@ -40,6 +40,7 @@ public final class V3 {
     public static byte[] encodeFunction(int functionNumber, V3Type tupleType, Object[] vals) {
         List<byte[]> results = new ArrayList<>();
         byte[][] header = header(functionNumber);
+        results.add(header[0]);
         if (header.length == 2) {
             results.add(header[1]);
         }
@@ -62,7 +63,6 @@ public final class V3 {
         if (version != VERSION_ID) {
             throw new IllegalArgumentException();
         }
-        int sequenceStart = 1;
         long fnNumber = zeroth & ID_MASK;
         if (fnNumber == ID_MASK) {
             final byte first = bb.get();
@@ -70,12 +70,15 @@ public final class V3 {
             if (first == 0x00 || type == DataType.STRING_LONG || type == DataType.LIST_SHORT || type == DataType.LIST_LONG) {
                 throw new IllegalArgumentException("invalid function ID format");
             }
-            int len = first - DataType.STRING_SHORT.offset;
-            byte[] fnNumBytes = new byte[len];
-            bb.get(fnNumBytes);
-            fnNumber = ID_MASK + Integers.getLong(fnNumBytes, 0, len);
+            if (type == DataType.SINGLE_BYTE) {
+                fnNumber = first;
+            } else {
+                int len = first - DataType.STRING_SHORT.offset;
+                byte[] fnNumBytes = new byte[len];
+                bb.get(fnNumBytes);
+                fnNumber = ID_MASK + Integers.getLong(fnNumBytes, 0, len);
+            }
             if (fnNumber < 0) throw new AssertionError();
-            sequenceStart = 2 + len;
         }
         return decodeTuple(tupleType, bb);
     }
@@ -229,7 +232,7 @@ public final class V3 {
     private static void encodeByteArray(V3Type type, Object arr, List<byte[]> results) {
         byte[] bytes = type.isString ? ((String) arr).getBytes(StandardCharsets.UTF_8) : (byte[]) arr;
         validateLength(type.arrayLen, bytes.length);
-        results.add(bytes);
+        results.add(rlp(bytes));
     }
 
     private static Object decodeByteArray(V3Type type, ByteBuffer bb) {
@@ -270,25 +273,43 @@ public final class V3 {
             if (dataLen == 1) {
                 return encodeLen1String(byteString[0]);
             }
-            byte[] result = new byte[1 + byteString.length];
-            result[0] = (byte) (DataType.STRING_SHORT.offset + dataLen);
-            System.arraycopy(byteString, 0, result, 1, byteString.length);
-            return result;
+            final ByteBuffer bb = ByteBuffer.allocate(1 + byteString.length);
+            bb.put((byte) (DataType.STRING_SHORT.offset + dataLen));
+            bb.put(byteString);
+            return bb.array();
         }
-        throw new Error(); // long string
+        final int lenOfLen = Integers.len(dataLen);
+        final ByteBuffer bb = ByteBuffer.allocate(1 + lenOfLen + byteString.length);
+        bb.put((byte) (DataType.STRING_LONG.offset + lenOfLen));
+        Integers.putLong(dataLen, bb);
+        bb.put(byteString);
+        return bb.array();
     }
 
     private static byte[] unrlp(ByteBuffer bb) {
         final byte lead = bb.get();
-        if (DataType.type(lead) == DataType.SINGLE_BYTE) {
+        final DataType type = DataType.type(lead);
+        if (DataType.SINGLE_BYTE == type) {
             return new byte[] { lead };
         }
-        if (DataType.type(lead) == DataType.STRING_SHORT) {
+        if (DataType.STRING_SHORT == type) {
             byte[] bytes = new byte[lead - DataType.STRING_SHORT.offset];
             bb.get(bytes);
             return bytes;
         }
-        throw new Error(); // long string
+        if (DataType.LIST_SHORT == type) throw new Error();
+        if (DataType.LIST_LONG == type) throw new Error();
+        final int lengthOfLength = lead - type.offset;
+        final byte[] length = new byte[lengthOfLength];
+        bb.get(length);
+        final int dataLength = Integers.getInt(length, 0, lengthOfLength);
+        if (dataLength < DataType.MIN_LONG_DATA_LEN) {
+            throw new IllegalArgumentException("long element data length must be " + DataType.MIN_LONG_DATA_LEN
+                    + " or greater; found: " + dataLength);
+        }
+        final byte[] data = new byte[dataLength];
+        bb.get(data);
+        return data;
     }
 
     private static byte[] encodeLen1String(byte first) {
