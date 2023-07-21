@@ -249,10 +249,13 @@ public final class V3 {
     }
 
     private static BigInteger[] decodeIntegerArray(V3Type type, ByteBuffer bb) {
+        BigInteger[] bigInts;
         if (type.arrayLen == -1) {
-            throw new RuntimeException("todo");
+            final byte[] prefix = unrlp(bb);
+            bigInts = new BigInteger[Integers.getInt(prefix, 0, prefix.length)];
+        } else {
+            bigInts = new BigInteger[type.arrayLen];
         }
-        BigInteger[] bigInts = new BigInteger[type.arrayLen];
         for (int i = 0; i < bigInts.length; i++) {
             bigInts[i] = decodeInteger(type.elementType, bb);
         }
