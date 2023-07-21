@@ -175,26 +175,22 @@ public final class V3 {
             results.add(rlp(booleans.length));
         }
         if (booleans.length > 0) {
-            int i = 0;
-            while (!booleans[i]) {
-                i++;
-            }
-            final int n = booleans.length - i;
-            final byte[] bits = new byte[Integers.roundLengthUp(n, Byte.SIZE) / Byte.SIZE];
-            for (int k = 0; k < n; k++) {
+            final byte[] bits = new byte[Integers.roundLengthUp(booleans.length, Byte.SIZE) / Byte.SIZE];
+            for (int k = 0; k < booleans.length; k++) {
                 if (booleans[booleans.length - 1 - k]) {
                     final int idx = bits.length - 1 - (k / Byte.SIZE);
                     bits[idx] |= 0b0000_0001 << (k % 8);
                 }
             }
-            results.add(rlp(bits));
+            results.add(bits);
         }
     }
 
     private static boolean[] decodeBooleanArray(final V3Type type, ByteBuffer bb) {
         final int len;
         if (type.arrayLen == 0 || (len = getLength(type, bb)) == 0) return new boolean[0];
-        final String binaryStr = new BigInteger(1, unrlp(bb)).toString(2);
+        final int byteLen = Integers.roundLengthUp(len, Byte.SIZE) / Byte.SIZE;
+        final String binaryStr = new BigInteger(1, readBytes(byteLen, bb)).toString(2);
         final int numChars = binaryStr.length();
         final int impliedZeros = len - numChars;
         final boolean[] booleans = new boolean[len];
