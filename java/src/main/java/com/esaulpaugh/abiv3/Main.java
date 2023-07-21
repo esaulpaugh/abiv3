@@ -29,28 +29,6 @@ public final class Main {
 
         System.out.println("#\t\t\tfn#\t\tSignature\t\tCalldata example");
 
-//        test(62, TypeFactory.create("(uint8)"), BigInteger.valueOf(0xfeL));
-//        test(63, TypeFactory.create("(uint8,())"), BigInteger.valueOf(0xfeL), new Object[0]);
-//        test(64, TypeFactory.create("(bytes,bytes1)"), new byte[3], new byte[1]);
-//        test(65, TypeFactory.create("(((bool),int8))"), (Object) new Object[] { new Object[] { false }, BigInteger.valueOf(99L) });
-//        test(66, TypeFactory.create("((bool)[])"), (Object) new Object[] { new Object[] { false } });
-//        test(319, TypeFactory.create("((bytes))"), (Object) new Object[] { new byte[0] });
-//        test(4, TypeFactory.create("((int16[]),(uint24[2]))"),
-//                new Object[] {
-//                        new BigInteger[]{ BigInteger.TEN }
-//                },
-//                new Object[] {
-//                        new BigInteger[]{
-//                                BigInteger.ONE, BigInteger.valueOf(3L)
-//                        }
-//                }
-//        );
-//        test(21, TypeFactory.create("(bool[0])"), (Object) new boolean[0] );
-//        test(100, TypeFactory.create("(bool[])"), (Object) new boolean[] { true, true, false } );
-//        test(0, TypeFactory.create("(bool[2])"), (Object) new boolean[] { true, false } );
-//        test(1, TypeFactory.create("(string[])"), (Object) new String[] { "", "false" } );
-//        test(2, TypeFactory.create("(string[3])"), (Object) new String[] { "d", "\u0009", "  " } );
-
         testSingle("(address,uint256,uint256,address,address,address,uint256,uint256,uint8,uint256,uint256,bytes32,uint256,bytes32,bytes32,uint256,(uint256,address)[],bytes)",
                 new Object[] {
                     BigInteger.ZERO,
@@ -156,10 +134,32 @@ public final class Main {
                 new Object[] { addr0 },
                 new Object[] { addr1, addr0 }
         );
+        // ------------------------------------------
+        test(62, TypeFactory.create("(uint8)"), BigInteger.valueOf(0xfeL));
+        test(63, TypeFactory.create("(uint8,())"), BigInteger.valueOf(0xccL), new Object[0]);
+        test(64, TypeFactory.create("(bytes,bytes1)"), new byte[3], new byte[1]);
+        test(65, TypeFactory.create("(((bool),int8))"), (Object) new Object[] { new Object[] { false }, BigInteger.valueOf(99L) });
+        test(66, TypeFactory.create("((bool)[])"), (Object) new Object[] { new Object[] { false } });
+        test(319, TypeFactory.create("((bytes))"), (Object) new Object[] { new byte[0] });
+        test(4, TypeFactory.create("((int16[]),(uint24[2]))"),
+                new Object[] {
+                        new BigInteger[]{ BigInteger.TEN }
+                },
+                new Object[] {
+                        new BigInteger[]{
+                                BigInteger.ONE, BigInteger.valueOf(3L)
+                        }
+                }
+        );
+        test(21, TypeFactory.create("(bool[0])"), (Object) new boolean[0] );
+        test(100, TypeFactory.create("(bool[])"), (Object) new boolean[] { true, true, false } );
+        test(0, TypeFactory.create("(bool[2])"), (Object) new boolean[] { true, false } );
+        test(1, TypeFactory.create("(string[])"), (Object) new String[] { "", "false" } );
+        testSingle("string[3]", new String[] { "d", "\u0009", "  " } );
     }
 
     private static void testSingle(V3Type type, Object value) {
-        testSingle("(" + type.canonicalType + ")", value);
+        testSingle(type.canonicalType, value);
     }
 
     private static void testSingle(String typeStr, Object value) {
