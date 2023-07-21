@@ -174,14 +174,19 @@ public final class V3 {
             results.add(rlp(Integers.toBytes(booleans.length)));
         }
         if (booleans.length > 0) {
-            final StringBuilder binary = new StringBuilder("+");
-            for (boolean b : booleans) {
-                binary.append(b ? '1' : '0');
+            int i = 0;
+            while (!booleans[i]) {
+                i++;
             }
-            final BigInteger bi = new BigInteger(binary.toString(), 2);
-            byte[] biBytes = bi.toByteArray();
-            if (biBytes[0] == 0x00) biBytes = Arrays.copyOfRange(biBytes, 1, biBytes.length);
-            results.add(rlp(biBytes));
+            final byte[] bits = new byte[Integers.roundLengthUp(booleans.length - i, Byte.SIZE) / Byte.SIZE];
+            final int n = booleans.length - i;
+            for (int k = 0; k < n; k++) {
+                if (booleans[booleans.length - 1 - k]) {
+                    final int idx = bits.length - 1 - (k / Byte.SIZE);
+                    bits[idx] |= 0b0000_0001 << (k % 8);
+                }
+            }
+            results.add(rlp(bits));
         }
     }
 
