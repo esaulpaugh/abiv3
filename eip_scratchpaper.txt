@@ -48,11 +48,17 @@ object "Contract1" {
             fnNumber := zeroth
         }
 
-        w := calldataload(dataIndex)
-        let addr := shr(96, w)
+        switch fnNumber
+        case 0 {
+            w := calldataload(dataIndex)
+            let addr := shr(96, w)
+            w := calldataload(add(dataIndex, 20))
+            let wei := shr(168, w)
+            doAThing(addr, wei)
+        }
 
-        w := calldataload(add(dataIndex, 20))
-        let wei := shr(168, w)
+        function doAThing(account, wei) {
+        }
 
         return(0, 0)
     }
