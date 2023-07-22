@@ -28,7 +28,7 @@ Immediately following byte zero and the function ID, arguments are encoded accor
 
 #### Tuple types:
 
-Tuples are encoded as merely the concatenation of the encodings of the elements.
+Tuples are encoded as merely the concatenation of the encodings of the elements in order, left to right.
 
 #### Base types:
 
@@ -38,13 +38,13 @@ Integers are encoded in big-endian two's complement and are sign-extended to the
 
 #### Array types:
 
-#### Byte array types (including `string` which is utf-8 bytes):
+##### Byte array types (including `string` which is utf-8 bytes):
 
 Static byte arrays are encoded as merely the byte string itself. Dynamic-length byte arrays are encoded as the RLP encoding of the byte string.
 
 ##### Boolean array types:
 
-A static boolean array is encoded as if it were an integer, specifically the (big-endian two's complement) unsigned integer formed by the array elements interpreted left to right as bits where true values are `1` and false values are `0`. The integer's width in bytes is the smallest whole number greater than or equal to the number of elements divided by 8. Within these bytes, the bits representing the array elements are contiguous and right-aligned.
+A static boolean array is encoded as if it were an integer, specifically the (big-endian two's complement) unsigned integer formed by the array elements interpreted left to right as bits where true values are `1` and false values are `0`. The integer's width in bytes is the smallest whole number greater than or equal to the number of elements divided by 8.
 
 Dynamic-length boolean arrays are encoded as if a static boolean array appended to the RLP encoding of the array length.
 
@@ -52,9 +52,9 @@ For example, `[true, false, true, false, false, true, false, true, true]` would 
 
 ##### All other array types:
 
-Arrays are encoded as the concatenation of the encodings of the elements.
+Arrays are encoded as the concatenation of the encodings of the elements in order, left to right.
 
-If the array type is dynamic (i.e. variable-length and not statically-sized), the array length, in elements, must encoded RLP-wise and prepended to the encodings of the elements.
+If the array type is dynamic (i.e. of variable length), the array length, in elements, is encoded RLP-wise and prepended to the encodings of the elements.
 
 ### Versioning:
 

@@ -22,28 +22,34 @@ object "Contract1" {
         let w := calldataload(0x00)
         let zeroth := byte(w, 0x00)
         if gt(zeroth, 0x3f) { stop() }
-        if gt(0x3f, zeroth) {
-            let fnNumber := zeroth
-            return(0, 0)
-        }
-        let first := byte(w, 0x01)
-        let badFirst := or(or(eq(0x00, first), eq(0x80, first)), gt(first, 0xb7))
-        if badFirst { stop() }
-        if lt(first, 0x80) {
-            let fnNumber := first
-            return(0, 0)
-        }
 
-        let data_length := sub(first, 0x80)
-        let end_index := add(2, data_length)
-
-        let shift_amount := sub(mul(data_length, 8), 8)
         let fnNumber := 0
-        for { let i := 2 } lt(i, end_index) { i := add(i, 1) } {
-            fnNumber := or(fnNumber, shl(shift_amount, byte(i, w)))
-            shift_amount := sub(shift_amount, 8)
+        let dataIndex := 1
+
+        switch gt(0x3f, zeroth)
+        case 0 {
+            let first := byte(w, 0x01)
+            let badFirst := or(or(eq(0x00, first), eq(0x80, first)), gt(first, 0xb7))
+            if badFirst { stop() }
+            if lt(first, 0x80) {
+                fnNumber := first
+                return(0, 0)
+            }
+            let data_length := sub(first, 0x80)
+            dataIndex := add(2, data_length)
+            let shift_amount := sub(mul(data_length, 8), 8)
+            for { let i := 2 } lt(i, dataIndex) { i := add(i, 1) } {
+                fnNumber := or(fnNumber, shl(shift_amount, byte(i, w)))
+                shift_amount := sub(shift_amount, 8)
+            }
+            fnNumber := sub(fnNumber, 0x3f)
         }
-        fnNumber := sub(fnNumber, 0x3f)
+        default {
+            fnNumber := zeroth
+        }
+
+        w := calldataload(dataIndex)
+        let addr := shr(96, w)
 
         return(0, 0)
     }
