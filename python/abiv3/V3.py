@@ -162,7 +162,7 @@ class V3:
         elif v3_type.elementType.typeCode == V3Type.TYPE_CODE_INTEGER:
             V3.encode_integer_array(v3_type, arr, results)
         else:
-            V3.encode_object_array(v3_type, arr, b'')
+            V3.encode_object_array(v3_type, arr, results)
 
     @staticmethod
     def decode_array(v3_type, bb):
@@ -176,7 +176,7 @@ class V3:
             return V3.decode_boolean_array(v3_type, bb)
         elif v3_type.elementType.typeCode == V3Type.TYPE_CODE_INTEGER:
             return V3.decode_integer_array(v3_type, bb)
-        return V3.decode_object_array(v3_type, bb, False)
+        return V3.decode_object_array(v3_type, bb)
 
     @staticmethod
     def encode_boolean_array(v3_type, booleans, results):
@@ -198,7 +198,7 @@ class V3:
             return []
         byte_len = int(V3.round_length_up(the_len, 8) / 8)
         the_bytes = bb.array(byte_len)
-        binary = bin(int.from_bytes(the_bytes, byteorder='big'))
+        binary = '{0:b}'.format(int.from_bytes(the_bytes, byteorder='big'))
         num_chars = len(binary)
         implied_zeros = the_len - num_chars
         booleans = []
@@ -227,20 +227,17 @@ class V3:
     @staticmethod
     def encode_object_array(v3_type, arr, results):
         V3.validate_length(v3_type.arrayLen, len(arr))
+        if v3_type.arrayLen == -1:
+            results.append(V3.rlp_int(len(arr)))
         for i in range(0, len(arr)):
             V3.encode(v3_type.elementType, arr[i], results)
 
     @staticmethod
-    def decode_object_array(v3_type, list_item, skip_first):
-        elements = list_item.elements()
-        list_iter = list_item.iterator()
-        num_elements = len(elements)
-        if skip_first:
-            list_iter.next()
-            num_elements = num_elements - 1
+    def decode_object_array(v3_type, bb):
+        the_len = V3.get_length(v3_type, bb)
         found = []
-        for i in range(0, num_elements):
-            found.append(V3.decode(v3_type.elementType, list_iter))
+        for i in range(0, the_len):
+            found.append(V3.decode(v3_type.elementType, bb))
         return found
 
     @staticmethod

@@ -48,24 +48,27 @@ int_val = 10
 print(int_val.__class__)
 print(type(int_val))
 
-dec = TypeFactory.create("()")
-print(dec.canonicalType)
+t = TypeFactory.create("()")
+print(t.canonicalType)
 
-dec = TypeFactory.create("(fixed128x3)[]")
-print(dec.canonicalType)
+t = TypeFactory.create("(fixed128x3)[]")
+print(t.canonicalType)
 
 bool_type = TypeFactory.create("bool")
 
-rlp = V3.encode_function(1, [bool_type], [True])
-valz = V3.decode_function([bool_type], rlp)
+enc = V3.encode_function(1, [bool_type], [True])
+valz = V3.decode_function([bool_type], enc)
+print(valz)
 
-dec = TypeFactory.create("bool[5]")
-print(dec.canonicalType)
-print(dec.elementType.canonicalType)
+t = TypeFactory.create("bool[2][4]")
+# print(dec.canonicalType)
+# print(dec.elementType.canonicalType)
 # print(dec.elementType.elementType.canonicalType)
 
-rlp = V3.encode_function(1, [dec], [[True, False, False, True, False]])
-valz = V3.decode_function([dec], rlp)
+enc = V3.encode_function(1, [t], [[[True, False], [False, False], [False, True], [True, True]]])
+print(binascii.hexlify(enc))
+valz = V3.decode_function([t], enc)
+print(valz)
 
 addr = TypeFactory.create('int32')
 print(addr.bitLen)
