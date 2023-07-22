@@ -51,6 +51,9 @@ object "Contract1" {
         w := calldataload(dataIndex)
         let addr := shr(96, w)
 
+        w := calldataload(add(dataIndex, 20))
+        let wei := shr(168, w)
+
         return(0, 0)
     }
 }
