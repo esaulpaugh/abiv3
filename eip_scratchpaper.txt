@@ -2,7 +2,7 @@
 A space-efficient standard for contract ABI with Layer 2 in mind
 
 --abstract--
-The ABIv3 encoding algorithm is an evolution of Solidity's ABIv2 designed for Layer-2 smart contracts with a focus on maximizing space efficiency. ABIv3 is designed to be both extensible and readily differentiable from prior ABI standards, especially ABIv2. They key to its space efficiency is its basis on Recursive Length Prefix (RLP) encoding, an algorithm for serializing hierarchical data in a tightly-packed format.
+The ABIv3 encoding algorithm is an evolution of Solidity's ABIv2 designed for Layer-2 smart contracts with a focus on maximizing space efficiency. ABIv3 is designed to be both extensible and readily differentiable from prior ABI standards, especially ABIv2.
 
 --motivation--
 This EIP assumes that Layer 2 protocols are the future of Ethereum scaling.

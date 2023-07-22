@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/** Serializes and deserializes tuples through the use of RLP encoding. */
+/** Serializes and deserializes tuples of values. */
 public final class V3 {
 
     private V3() {}

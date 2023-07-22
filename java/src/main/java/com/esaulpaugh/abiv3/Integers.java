@@ -70,18 +70,6 @@ public final class Integers {
         return val;
     }
 
-    public static BigInteger getBigInt(byte[] buffer, int offset, int len) {
-        if(len != 0) {
-            if(buffer[offset] == 0) {
-                throw new IllegalArgumentException();
-            }
-            byte[] arr = new byte[len];
-            System.arraycopy(buffer, offset, arr, 0, len);
-            return new BigInteger(1, arr);
-        }
-        return BigInteger.ZERO;
-    }
-
     /**
      * Returns the byte length of an integer's minimal (without leading zeroes) two's complement representation. The
      * integer zero always has zero length.
