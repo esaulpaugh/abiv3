@@ -46,12 +46,12 @@ print(binascii.hexlify(enc))
 valz = V3.decode_function([t], enc)
 print(valz)
 
-addr = TypeFactory.create('int32')
-print(addr.bitLen)
+signed32 = TypeFactory.create('int32')
+print(V3.encode_function(16, [signed32], [-2]))
 
-schema = [TypeFactory.create("uint72[]")]
+schema = [TypeFactory.create("int72[]")]
 ints = [
-    2,
+    -2,
     0,
     16_777_216,
     16_777_217,

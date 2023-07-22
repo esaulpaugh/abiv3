@@ -125,31 +125,19 @@ class V3:
         minimal_bytes = Utils.to_bytes(val)
         minimal_width = len(minimal_bytes)
         padding_byte = 0xff if val < 0 else 0x00
-        for i in range(0, len(minimal_bytes)):
-            extended[i] = padding_byte
         j = byte_width - minimal_width
+        for i in range(0, j):
+            extended[i] = padding_byte
         for i in range(0, minimal_width):
             extended[j] = minimal_bytes[i]
             j = j + 1
         results.append(extended)
 
     @staticmethod
-    def sign_extend_negative(negative, new_width):
-        extended = bytearray(new_width)
-        for i in range(0, new_width):
-            extended[i] = 0xff
-        negative_len = len(negative)
-        j = new_width - negative_len
-        for i in range(0, negative_len):
-            extended[j] = negative[i]
-            j = j + 1
-        return extended
-
-    @staticmethod
     def decode_integer(v3_type, bb):
         byte_len = int(v3_type.bitLen / 8)
         the_bytes = bb.array(byte_len)
-        return int.from_bytes(the_bytes, byteorder='big') if v3_type.unsigned else int.from_bytes(the_bytes, byteorder='big', signed=True)
+        return int.from_bytes(the_bytes, byteorder='big', signed=False if v3_type.unsigned else True)
 
     @staticmethod
     def encode_array(v3_type, arr, results):
