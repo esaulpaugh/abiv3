@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from abiv3 import Utils
-from abiv3.RLPIterator import RLPIterator
 
 
 class RLPItem:
@@ -48,19 +47,6 @@ class RLPItem:
 
     def iterator(self):
         return RLPIterator(self.buffer, self.dataIndex, self.endIndex)
-
-    @staticmethod
-    def rlp_type(lead):
-        lead = Utils.to_signed_byte(lead)
-        if lead < -72:  # 0xB8
-            return 1  # short string
-        if lead < -64:  # 0xC0
-            return 2  # long string
-        if lead < -8:  # 0xF8
-            return 3  # short list
-        if lead < 0:
-            return 4  # long list
-        return 0  # single byte
 
     @staticmethod
     def require_in_bounds(val, container_end, index):

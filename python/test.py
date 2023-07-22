@@ -13,14 +13,8 @@
 # limitations under the License.
 import binascii
 
-from PyByteBuffer import ByteBuffer
-
-from abiv3 import Utils
-from abiv3.RLPEncoder import RLPEncoder
-from abiv3.RLPItem import RLPItem
 from abiv3.TypeFactory import TypeFactory
 from abiv3.V3 import V3
-from abiv3.V3Type import V3Type
 
 # arr = b'\x7f'
 # arr = b'\xb8\x38\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
@@ -62,16 +56,16 @@ print(dec.canonicalType)
 
 bool_type = TypeFactory.create("bool")
 
-rlp = V3.to_rlp(1, [bool_type], [True])
-valz = V3.from_rlp([bool_type], rlp)
+rlp = V3.encode_function(1, [bool_type], [True])
+valz = V3.decode_function([bool_type], rlp)
 
 dec = TypeFactory.create("bool[5]")
 print(dec.canonicalType)
 print(dec.elementType.canonicalType)
 # print(dec.elementType.elementType.canonicalType)
 
-rlp = V3.to_rlp(1, [dec], [[True, False, False, True, False]])
-valz = V3.from_rlp([dec], rlp)
+rlp = V3.encode_function(1, [dec], [[True, False, False, True, False]])
+valz = V3.decode_function([dec], rlp)
 
 addr = TypeFactory.create('int32')
 print(addr.bitLen)
@@ -96,7 +90,7 @@ objects = [ints]
 
 print(objects)
 
-arr = V3.to_rlp(31, schema, objects)
+arr = V3.encode_function(31, schema, objects)
 
 n = len(arr)
 print('len = ' + str(n))
@@ -104,7 +98,7 @@ print(binascii.hexlify(arr))
 # for i in range(0, n):
 #     print(Utils.to_signed_byte(arr[i]))
 
-decoded = V3.from_rlp(schema, arr)
+decoded = V3.decode_function(schema, arr)
 print(decoded)
 
 # =================================
@@ -114,7 +108,7 @@ print()
 
 print(objects)
 
-arr = V3.to_rlp(499, schema, objects)
+arr = V3.encode_function(499, schema, objects)
 
 n = len(arr)
 print('len = ' + str(n))
@@ -122,7 +116,7 @@ print(binascii.hexlify(arr))
 # for i in range(0, n):
 #     print(Utils.to_signed_byte(arr[i]))
 
-decoded = V3.from_rlp(schema, arr)
+decoded = V3.decode_function(schema, arr)
 print(decoded)
 
 # # for i in range(0, 10):

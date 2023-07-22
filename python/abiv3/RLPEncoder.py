@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from abiv3 import Utils
-from abiv3.RLPItem import RLPItem
 
 
 class RLPEncoder:
@@ -25,7 +24,7 @@ class RLPEncoder:
     def str_encoded_len(byte_string):
         data_len = len(byte_string)
         data_len_one = data_len == 1
-        is_single_byte = data_len_one and RLPItem.rlp_type(byte_string[0]) == 0
+        is_single_byte = data_len_one and Utils.rlp_type(byte_string[0]) == 0
         return RLPEncoder.item_length(
             0 if is_single_byte else data_len
         )
