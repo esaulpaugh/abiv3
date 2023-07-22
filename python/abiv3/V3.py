@@ -149,7 +149,7 @@ class V3:
     @staticmethod
     def decode_integer(v3_type, bb):
         byte_len = int(v3_type.bitLen / 8)
-        the_bytes = V3.read_bytes(byte_len, bb)
+        the_bytes = bb.array(byte_len)
         return int.from_bytes(the_bytes, byteorder='big') if v3_type.unsigned else int.from_bytes(the_bytes, byteorder='big', signed=True)
 
     @staticmethod
@@ -168,7 +168,8 @@ class V3:
     @staticmethod
     def decode_array(v3_type, bb):
         if v3_type.elementType.typeCode == V3Type.TYPE_CODE_BYTE:
-            the_bytes = V3.read_bytes(v3_type.arrayLen, bb)
+            the_len = V3.get_length(v3_type, bb)
+            the_bytes = bb.array(the_len)
             if v3_type.isString:
                 return the_bytes.decode('utf-8')
             return the_bytes
@@ -182,7 +183,7 @@ class V3:
     def encode_boolean_array(v3_type, booleans, results):
         V3.validate_length(v3_type.arrayLen, len(booleans))
         if v3_type.arrayLen == -1:
-            results.add(V3.rlp(len(booleans)))
+            results.append(V3.rlp_int(len(booleans)))
         if len(booleans) > 0:
             bits = bytearray(int(V3.round_length_up(len(booleans), 8) / 8))
             for k in range(0, len(booleans)):
@@ -193,11 +194,11 @@ class V3:
 
     @staticmethod
     def decode_boolean_array(v3_type, bb):
-        the_len = int.from_bytes(V3.unrlp(bb), byteorder='big') if v3_type.arrayLen == -1 else v3_type.arrayLen
+        the_len = V3.get_length(v3_type, bb)
         if the_len == 0:
             return []
         byte_len = int(V3.round_length_up(the_len, 8) / 8)
-        the_bytes = V3.read_bytes(byte_len, bb)
+        the_bytes = bb.array(byte_len)
         binary = bin(int.from_bytes(the_bytes, byteorder='big'))
         num_chars = len(binary)
         implied_zeros = the_len - num_chars
@@ -218,7 +219,7 @@ class V3:
 
     @staticmethod
     def decode_integer_array(v3_type, bb):
-        the_len = int.from_bytes(V3.unrlp(bb), byteorder='big') if v3_type.arrayLen == -1 else v3_type.arrayLen
+        the_len = V3.get_length(v3_type, bb)
         out = []
         for i in range(0, the_len):
             out.append(V3.decode_integer(v3_type.elementType, bb))
@@ -272,16 +273,16 @@ class V3:
         if rlp_type == 0:
             return V3.single(lead)
         if rlp_type == 1:
-            return V3.read_bytes(lead - 0x80, bb)
+            return bb.array(lead - 0x80)
         if rlp_type == 3:
             raise Exception()
         if rlp_type == 4:
             raise Exception()
         length_of_length = lead - 0xb7
-        data_length = int.from_bytes(V3.read_bytes(length_of_length, bb), byteorder='big')
+        data_length = int.from_bytes(bb.array(length_of_length), byteorder='big')
         if data_length < 56:
             raise Exception()
-        return V3.read_bytes(data_length, bb)
+        return bb.array(data_length)
 
     @staticmethod
     def len(val):
@@ -304,7 +305,7 @@ class V3:
 
     @staticmethod
     def single(val):
-        return bytes([ val ])
+        return bytes([val])
 
     @staticmethod
     def mod(val, power_of_two):
@@ -316,5 +317,5 @@ class V3:
         return the_len + (power_of_two - mod) if mod != 0 else the_len
 
     @staticmethod
-    def read_bytes(n, bb):
-        return bb.array(n)
+    def get_length(v3_type, bb):
+        return int.from_bytes(V3.unrlp(bb), byteorder='big') if v3_type.arrayLen == -1 else v3_type.arrayLen
