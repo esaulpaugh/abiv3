@@ -60,7 +60,7 @@ enc = V3.encode_function(1, [bool_type], [True])
 valz = V3.decode_function([bool_type], enc)
 print(valz)
 
-t = TypeFactory.create("bool[2][4]")
+t = TypeFactory.create("((bool,bool),(bool,bool),(bool,bool),(bool,bool))")
 # print(dec.canonicalType)
 # print(dec.elementType.canonicalType)
 # print(dec.elementType.elementType.canonicalType)

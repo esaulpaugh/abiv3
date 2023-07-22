@@ -47,13 +47,13 @@ def find_subtuple_end(parent_type_str, arg_start) -> int:
     i = arg_start
     while True:
         i = i + 1
-        x = parent_type_str[i]
-        if int(x) <= int(')'):
-            if int(x) == int(')'):
+        x_ord = ord(parent_type_str[i])
+        if x_ord <= ord(')'):
+            if x_ord == ord(')'):
                 if depth <= 1:
                     return i
                 depth = depth - 1
-            elif int(x) == int('('):
+            elif x_ord == ord('('):
                 depth = depth + 1
 
 
