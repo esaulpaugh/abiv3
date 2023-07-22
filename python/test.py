@@ -16,32 +16,8 @@ import binascii
 from abiv3.TypeFactory import TypeFactory
 from abiv3.V3 import V3
 
-# arr = b'\x7f'
-# arr = b'\xb8\x38\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-# arr = b'\xf8\x38\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-# item = RLPItem.wrap(arr, 0, len(arr))
-# print(item)
-
-# items = [b'\x80']  # , b'\x7f'
-# encoding_len = RLPEncoder.sum_encoded_len(items)
-# print(encoding_len)
-# buf = ByteBuffer.allocate(encoding_len)
-# RLPEncoder.put_sequence(items, buf)
-#
-# print(buf)
-#
-# buf.rewind()
-# arr = buf.array(encoding_len)
-#
-# print(binascii.hexlify(arr))
-
-# n = len(arr)
-# for i in range(0, n):
-#     print(RLPItem.to_signed_byte(arr[i]))
-
 # schema = [V3Type.BOOL, V3Type.INT256, V3Type.BYTES, V3Type.INT256_ARRAY_3, V3Type.UFIXED_128_X_18]
-# objects = [True, 5, b'\x03\x09', [10, -16777215, 0], -10.9]  # TODO decimals
-
+# objects = [True, 5, b'\x03\x09', [10, -16777215, 0], -10.9]
 
 int_val = 10
 
@@ -60,12 +36,12 @@ enc = V3.encode_function(1, [bool_type], [True])
 valz = V3.decode_function([bool_type], enc)
 print(valz)
 
-t = TypeFactory.create("((bool,bool),(bool,bool),(bool,bool),(bool,bool))")
+t = TypeFactory.create("((bool,bool)[])")
 # print(dec.canonicalType)
 # print(dec.elementType.canonicalType)
 # print(dec.elementType.elementType.canonicalType)
 
-enc = V3.encode_function(1, [t], [[[True, False], [False, False], [False, True], [True, True]]])
+enc = V3.encode_function(1, [t], [[[[True, False], [False, False], [False, True], [True, True]]]])
 print(binascii.hexlify(enc))
 valz = V3.decode_function([t], enc)
 print(valz)

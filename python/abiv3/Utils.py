@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from abiv3.RLPItem import RLPItem
-
 
 def to_bytes(number) -> bytes:
     return to_bytes_unsigned(number) if number >= 0 else to_bytes_negative(number)
