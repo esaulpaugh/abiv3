@@ -15,7 +15,6 @@
 */
 package com.esaulpaugh.abiv3;
 
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
 public final class Integers {
