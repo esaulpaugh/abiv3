@@ -108,7 +108,7 @@ print()
 
 print(objects)
 
-arr = V3.encode_function(499, schema, objects)
+arr = V3.encode_function(62, schema, objects)
 
 n = len(arr)
 print('len = ' + str(n))

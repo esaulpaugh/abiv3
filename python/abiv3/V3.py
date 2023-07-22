@@ -58,7 +58,8 @@ class V3:
                 return
             results.append(bytes(Utils.to_bytes_unsigned(fn_num)))
             return
-        results.append(bytes(b'\x3f', Utils.to_bytes_unsigned(fn_num - V3.ID_MASK)))
+        results.append(bytes(b'\x3f'))
+        results.append(Utils.to_bytes_unsigned(fn_num - V3.ID_MASK))
 
     @staticmethod
     def validate_length(expected_len, actual_len):
@@ -147,10 +148,9 @@ class V3:
 
     @staticmethod
     def decode_integer(v3_type, bb):
-        item = bb.get()
-        if v3_type.unsigned or ((item.dataLength * 8) < v3_type.bitLen):
-            return item.as_int()
-        return item.as_int_signed()
+        byte_len = int(v3_type.bitLen / 8)
+        the_bytes = V3.read_bytes(byte_len, bb)
+        return int.from_bytes(the_bytes, byteorder='big') if v3_type.unsigned else int.from_bytes(the_bytes, byteorder='big', signed=True)
 
     @staticmethod
     def encode_array(v3_type, arr, results):
@@ -168,7 +168,7 @@ class V3:
     @staticmethod
     def decode_array(v3_type, bb):
         if v3_type.elementType.typeCode == V3Type.TYPE_CODE_BYTE:
-            the_bytes = bb.get()
+            the_bytes = V3.read_bytes(v3_type.arrayLen, bb)
             if v3_type.isString:
                 return the_bytes.decode('utf-8')
             return the_bytes
@@ -193,11 +193,12 @@ class V3:
 
     @staticmethod
     def decode_boolean_array(v3_type, bb):
-        the_len = bb.get() if v3_type.arrayLen == -1 else v3_type.arrayLen
+        the_len = int.from_bytes(V3.unrlp(bb), byteorder='big') if v3_type.arrayLen == -1 else v3_type.arrayLen
         if the_len == 0:
             return []
         byte_len = int(V3.round_length_up(the_len, 8) / 8)
-        binary = '{0:b}'.format(bb.get(byte_len))
+        the_bytes = V3.read_bytes(byte_len, bb)
+        binary = bin(int.from_bytes(the_bytes, byteorder='big'))
         num_chars = len(binary)
         implied_zeros = the_len - num_chars
         booleans = []
@@ -210,22 +211,24 @@ class V3:
     @staticmethod
     def encode_integer_array(v3_type, arr, results):
         V3.validate_length(v3_type.arrayLen, len(arr))
+        if v3_type.arrayLen == -1:
+            results.append(V3.rlp_int(len(arr)))
         for e in arr:
             V3.encode_integer(v3_type.elementType, e, results)
 
     @staticmethod
-    def decode_integer_array(v3_type, arr):
-        return None
+    def decode_integer_array(v3_type, bb):
+        the_len = int.from_bytes(V3.unrlp(bb), byteorder='big') if v3_type.arrayLen == -1 else v3_type.arrayLen
+        out = []
+        for i in range(0, the_len):
+            out.append(V3.decode_integer(v3_type.elementType, bb))
+        return out
 
     @staticmethod
-    def encode_object_array(v3_type, arr, first, results):
+    def encode_object_array(v3_type, arr, results):
         V3.validate_length(v3_type.arrayLen, len(arr))
-        out = []
-        if first is not None:
-            out.append(first)
         for i in range(0, len(arr)):
-            out.append(V3.encode(v3_type.elementType, arr[i], results))
-        results.append(out)
+            V3.encode(v3_type.elementType, arr[i], results)
 
     @staticmethod
     def decode_object_array(v3_type, list_item, skip_first):
@@ -241,7 +244,7 @@ class V3:
         return found
 
     @staticmethod
-    def rlp(value):
+    def rlp_int(value):
         return V3.rlp(Utils.to_bytes(value))
 
     @staticmethod
@@ -263,6 +266,24 @@ class V3:
         return bb.array()
 
     @staticmethod
+    def unrlp(bb):
+        lead = bb.get()
+        rlp_type = Utils.rlp_type(lead)
+        if rlp_type == 0:
+            return V3.single(lead)
+        if rlp_type == 1:
+            return V3.read_bytes(lead - 0x80, bb)
+        if rlp_type == 3:
+            raise Exception()
+        if rlp_type == 4:
+            raise Exception()
+        length_of_length = lead - 0xb7
+        data_length = int.from_bytes(V3.read_bytes(length_of_length, bb), byteorder='big')
+        if data_length < 56:
+            raise Exception()
+        return V3.read_bytes(data_length, bb)
+
+    @staticmethod
     def len(val):
         leng = 0
         while val != 0:
@@ -276,21 +297,24 @@ class V3:
         temp = bytearray(8)
         j = 8
         while val != 0:
-            temp[--j] = val
+            j = j - 1
+            temp[j] = val
             val >>= 8
         bb.put(temp, j, 8 - j)
-
 
     @staticmethod
     def single(val):
         return bytes([ val ])
 
     @staticmethod
-    def mod(val, powerOfTwo):
-        return val & (powerOfTwo - 1)
-
+    def mod(val, power_of_two):
+        return val & (power_of_two - 1)
 
     @staticmethod
-    def round_length_up(len, powerOfTwo):
-        mod = V3.mod(len, powerOfTwo)
-        return len + (powerOfTwo - mod) if mod != 0 else len
+    def round_length_up(the_len, power_of_two):
+        mod = V3.mod(the_len, power_of_two)
+        return the_len + (power_of_two - mod) if mod != 0 else the_len
+
+    @staticmethod
+    def read_bytes(n, bb):
+        return bb.array(n)
