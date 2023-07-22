@@ -45,7 +45,6 @@ class V3:
         version = zeroth & V3.VERSION_MASK
         if version != V3.VERSION_ID:
             raise Exception()
-        sequence_start = 1
         fn_number = zeroth & V3.ID_MASK
 
         return V3.decode_tuple(schema, bb)
@@ -55,11 +54,11 @@ class V3:
         if fn_num < V3.ID_MASK:
             if fn_num == 0:
                 results.append(bytes(b'\x00'))
-                return
-            results.append(bytes(Utils.to_bytes_unsigned(fn_num)))
-            return
-        results.append(bytes(b'\x3f'))
-        results.append(Utils.to_bytes_unsigned(fn_num - V3.ID_MASK))
+            else:
+                results.append(bytes(Utils.to_bytes_unsigned(fn_num)))
+        else:
+            results.append(bytes(b'\x3f'))
+            results.append(Utils.to_bytes_unsigned(fn_num - V3.ID_MASK))
 
     @staticmethod
     def validate_length(expected_len, actual_len):
