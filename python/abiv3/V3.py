@@ -253,20 +253,16 @@ class V3:
     @staticmethod
     def unrlp(bb):
         lead = bb.get()
-        rlp_type = Utils.rlp_type(lead)
-        if rlp_type == 0:
+        if lead < 0x80:
             return V3.single(lead)
-        if rlp_type == 1:
+        if lead < 0xB8:
             return bb.array(lead - 0x80)
-        if rlp_type == 3:
-            raise Exception()
-        if rlp_type == 4:
-            raise Exception()
-        length_of_length = lead - 0xb7
-        data_length = int.from_bytes(bb.array(length_of_length), byteorder='big')
-        if data_length < 56:
-            raise Exception()
-        return bb.array(data_length)
+        if lead < 0xC0:
+            length_of_length = lead - 0xb7
+            data_length = int.from_bytes(bb.array(length_of_length), byteorder='big')
+            if data_length >= 56:
+                return bb.array(data_length)
+        raise Exception()
 
     @staticmethod
     def len(val):

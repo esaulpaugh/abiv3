@@ -296,10 +296,9 @@ public final class V3 {
         if (lead < 0xC0) {
             final int lengthOfLength = lead - 0xB7;
             final int dataLength = Integers.getInt(readBytes(lengthOfLength, bb), 0, lengthOfLength);
-            if (dataLength < 56) {
-                throw new IllegalArgumentException("long element data length must be 56 or greater; found: " + dataLength);
+            if (dataLength >= 56) {
+                return readBytes(dataLength, bb);
             }
-            return readBytes(dataLength, bb);
         }
         throw new Error();
     }

@@ -48,14 +48,14 @@ def to_signed_byte(lead) -> int:
     return lead
 
 
-def rlp_type(lead):
-    lead = to_signed_byte(lead)
-    if lead < -72:  # 0xB8
-        return 1  # short string
-    if lead < -64:  # 0xC0
-        return 2  # long string
-    if lead < -8:  # 0xF8
-        return 3  # short list
-    if lead < 0:
-        return 4  # long list
-    return 0  # single byte
+# def rlp_type(lead):
+#     lead = to_signed_byte(lead)
+#     if lead < -72:  # 0xB8
+#         return 1  # short string
+#     if lead < -64:  # 0xC0
+#         return 2  # long string
+#     if lead < -8:  # 0xF8
+#         return 3  # short list
+#     if lead < 0:
+#         return 4  # long list
+#     return 0  # single byte
