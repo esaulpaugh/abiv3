@@ -60,15 +60,12 @@ public final class V3 {
         }
         long fnNumber = zeroth & ID_MASK;
         if (fnNumber == ID_MASK) {
-            final byte first = bb.get();
-            final DataType type = DataType.type(first);
-            if (first == 0x00 || type == DataType.STRING_LONG || type == DataType.LIST_SHORT || type == DataType.LIST_LONG) {
-                throw new IllegalArgumentException("invalid function ID format");
-            }
-            if (DataType.SINGLE_BYTE == type) {
+            final int first = bb.get() & 0xff;
+            if (first > 0xb7) throw new IllegalArgumentException("invalid function ID format");
+            if (first < 0x80) {
                 fnNumber = first;
             } else {
-                int len = first - DataType.STRING_SHORT.offset;
+                int len = first - 0x80;
                 fnNumber = ID_MASK + Integers.getLong(readBytes(len, bb), 0, len);
             }
             if (fnNumber < 0) throw new AssertionError();
@@ -268,20 +265,20 @@ public final class V3 {
     public static byte[] rlp(byte[] byteString) {
         final int dataLen = byteString.length;
         final ByteBuffer bb;
-        if (dataLen < DataType.MIN_LONG_DATA_LEN) {
+        if (dataLen < 56) {
             if (dataLen == 1) {
                 final byte first = byteString[0];
                 return first < 0x00
-                        ? new byte[] { (byte) (DataType.STRING_SHORT.offset + 1), first }
+                        ? new byte[] { (byte) 0x81, first }
                         : single(first);
             }
             bb = ByteBuffer.allocate(1 + byteString.length);
-            bb.put((byte) (DataType.STRING_SHORT.offset + dataLen));
+            bb.put((byte) (0x80 + dataLen));
             bb.put(byteString);
         } else {
             final int lenOfLen = Integers.len(dataLen);
             bb = ByteBuffer.allocate(1 + lenOfLen + byteString.length);
-            bb.put((byte) (DataType.STRING_LONG.offset + lenOfLen));
+            bb.put((byte) (0xb7 + lenOfLen));
             Integers.putLong(dataLen, bb);
             bb.put(byteString);
         }
@@ -289,23 +286,22 @@ public final class V3 {
     }
 
     private static byte[] unrlp(ByteBuffer bb) {
-        final byte lead = bb.get();
-        final DataType type = DataType.type(lead);
-        if (DataType.SINGLE_BYTE == type) {
-            return single(lead);
+        final int lead = bb.get() & 0xFF;
+        if (lead < 0x80) {
+            return single((byte) lead);
         }
-        if (DataType.STRING_SHORT == type) {
-            return readBytes(lead - DataType.STRING_SHORT.offset, bb);
+        if (lead < 0xB8) {
+            return readBytes(lead - 0x80, bb);
         }
-        if (DataType.LIST_SHORT == type) throw new Error();
-        if (DataType.LIST_LONG == type) throw new Error();
-        final int lengthOfLength = lead - type.offset;
-        final int dataLength = Integers.getInt(readBytes(lengthOfLength, bb), 0, lengthOfLength);
-        if (dataLength < DataType.MIN_LONG_DATA_LEN) {
-            throw new IllegalArgumentException("long element data length must be " + DataType.MIN_LONG_DATA_LEN
-                    + " or greater; found: " + dataLength);
+        if (lead < 0xC0) {
+            final int lengthOfLength = lead - 0xB7;
+            final int dataLength = Integers.getInt(readBytes(lengthOfLength, bb), 0, lengthOfLength);
+            if (dataLength < 56) {
+                throw new IllegalArgumentException("long element data length must be 56 or greater; found: " + dataLength);
+            }
+            return readBytes(dataLength, bb);
         }
-        return readBytes(dataLength, bb);
+        throw new Error();
     }
 
     private static byte[][] header(int functionNumber) {
