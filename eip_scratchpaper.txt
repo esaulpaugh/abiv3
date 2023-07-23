@@ -37,7 +37,7 @@ object "Contract1" {
                 fnNumber := first
             }
             default {
-                if or(eq(0x80, first), gt(first, 0xb7)) { stop() }
+                if gt(first, 0xb7) { stop() }
                 let data_length := sub(first, 0x80)
                 dataIndex := add(2, data_length)
                 let shift_amount := sub(mul(data_length, 8), 8)
