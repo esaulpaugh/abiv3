@@ -20,7 +20,7 @@ object "Contract1" {
     code {
         // calldatacopy(0, 0, calldatasize())
         let w := calldataload(0x00)
-        let zeroth := byte(w, 0x00)
+        let zeroth := byte(0x00, w)
         if gt(zeroth, 0x3f) { stop() }
 
         let fnNumber := 0
@@ -31,7 +31,7 @@ object "Contract1" {
             fnNumber := zeroth
         }
         default {
-            let first := byte(w, 0x01)
+            let first := byte(0x01, w)
             switch lt(first, 0x80)
             case 1 {
                 fnNumber := first
