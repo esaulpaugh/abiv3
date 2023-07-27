@@ -171,14 +171,14 @@ public final class Main {
     }
 
     private static void test(final int fnNumber, final V3Type tupleType, final Object... values) {
-        final byte[] encoding = V3.encodeFunction(fnNumber, tupleType, values);
+        final byte[] encoding = V3.encodeFunction(fnNumber, tupleType, values, false);
         final String calldataStr = slowHex(encoding); // new BigInteger(1, rlp).toString(16);
         System.out.println("case" + caseNumber++ + ":\t\t"
                 + fnNumber + "\t\t"
                 + "foo" + tupleType.canonicalType + " --> "
                 + calldataStr + "\t\t"
                 + " (len " + encoding.length + ")");
-        final Object[] decoded = V3.decodeFunction(tupleType, encoding);
+        final Object[] decoded = V3.decodeFunction(tupleType, encoding, false);
         final boolean eq = Arrays.deepEquals(values, decoded);
         if (!eq) {
             throw new AssertionError(values + " != " + decoded);

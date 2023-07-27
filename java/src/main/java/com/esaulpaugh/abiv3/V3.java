@@ -28,18 +28,19 @@ public final class V3 {
 
     private V3() {}
 
-    static final byte VERSION_ID = 0;
+    static final byte VERSION_ID_INTERNAL = 0b0000_0000;
+    static final byte VERSION_ID_EXTERNAL = 0b0100_0000;
     static final byte VERSION_MASK = (byte) 0b1100_0000;
     static final byte ID_MASK = (byte) ~VERSION_MASK; // 0x3f (decimal 63), the complement of VERSION_MASK
 
-    public static byte[] encodeFunction(int functionNumber, V3Type tupleType, Object[] vals) {
+    public static byte[] encodeFunction(int functionNumber, V3Type tupleType, Object[] vals, boolean external) {
         final List<byte[]> results = new ArrayList<>();
-        final byte[][] header = header(functionNumber);
+        final byte[][] header = header(functionNumber, external);
         results.add(header[0]);
         if (header.length == 2) {
             results.add(header[1]);
         }
-        encodeTuple(tupleType, vals, results);
+        encodeTuple(tupleType, vals, external, results);
         int len = 0;
         for (byte[] result : results) {
             len += result.length;
@@ -51,11 +52,11 @@ public final class V3 {
         return encoding.array();
     }
 
-    public static Object[] decodeFunction(V3Type tupleType, byte[] buffer) {
+    public static Object[] decodeFunction(V3Type tupleType, byte[] buffer, boolean external) {
         final ByteBuffer bb = ByteBuffer.wrap(buffer);
         final byte zeroth = bb.get();
-        final int version = zeroth & VERSION_MASK;
-        if (version != VERSION_ID) {
+        final int versionBits = zeroth & VERSION_MASK;
+        if (versionBits != VERSION_ID_INTERNAL && versionBits != VERSION_ID_EXTERNAL) {
             throw new IllegalArgumentException();
         }
         long fnNumber = zeroth & ID_MASK;
@@ -70,25 +71,25 @@ public final class V3 {
             }
             if (fnNumber < 0) throw new AssertionError();
         }
-        return decodeTuple(tupleType, bb);
+        return decodeTuple(tupleType, bb, external);
     }
 
-    private static void encode(V3Type t, Object val, List<byte[]> results) {
+    private static void encode(V3Type t, Object val, boolean external, List<byte[]> results) {
         switch (t.typeCode) {
         case V3Type.TYPE_CODE_BOOLEAN: encodeBoolean((boolean) val, results); return;
-        case V3Type.TYPE_CODE_BIG_INTEGER: encodeInteger(t.bitLen / Byte.SIZE, (BigInteger) val, results); return;
-        case V3Type.TYPE_CODE_ARRAY: encodeArray(t, val, results); return;
-        case V3Type.TYPE_CODE_TUPLE: encodeTuple(t, (Object[]) val, results); return;
+        case V3Type.TYPE_CODE_BIG_INTEGER: encodeInteger(t.bitLen / Byte.SIZE, (BigInteger) val, external, results); return;
+        case V3Type.TYPE_CODE_ARRAY: encodeArray(t, val, external, results); return;
+        case V3Type.TYPE_CODE_TUPLE: encodeTuple(t, (Object[]) val, external, results); return;
         default: throw new Error();
         }
     }
 
-    private static Object decode(V3Type type, ByteBuffer bb) {
+    private static Object decode(V3Type type, ByteBuffer bb, boolean external) {
         switch (type.typeCode) {
         case V3Type.TYPE_CODE_BOOLEAN: return decodeBoolean(bb);
-        case V3Type.TYPE_CODE_BIG_INTEGER: return decodeInteger(type, bb);
-        case V3Type.TYPE_CODE_ARRAY: return decodeArray(type, bb);
-        case V3Type.TYPE_CODE_TUPLE: return decodeTuple(type, bb);
+        case V3Type.TYPE_CODE_BIG_INTEGER: return decodeInteger(type, bb, external);
+        case V3Type.TYPE_CODE_ARRAY: return decodeArray(type, bb, external);
+        case V3Type.TYPE_CODE_TUPLE: return decodeTuple(type, bb, external);
         default: throw new AssertionError();
         }
     }
@@ -101,7 +102,11 @@ public final class V3 {
         return bb.get() != 0;
     }
 
-    private static void encodeInteger(int byteLen, BigInteger val, List<byte[]> results) {
+    private static void encodeInteger(int byteLen, BigInteger val, boolean external, List<byte[]> results) {
+        if (external) {
+            encodeIntegerExternal(byteLen, val, results);
+            return;
+        }
         final byte[] destBytes = new byte[byteLen];
         if (val.signum() != 0) {
             final byte[] sourceBytes = val.toByteArray();
@@ -119,49 +124,66 @@ public final class V3 {
         results.add(destBytes);
     }
 
-    private static BigInteger decodeInteger(V3Type type, ByteBuffer bb) {
-        final byte[] bytes = readBytes(type.bitLen / Byte.SIZE, bb);
+    private static void encodeIntegerExternal(int byteLen, BigInteger val, List<byte[]> results) {
+        if (val.signum() != 0) {
+            final byte[] bytes = val.toByteArray();
+            results.add(
+                    rlp(
+                        val.signum() < 0
+                            ? signExtendNegative(bytes, byteLen)
+                            : bytes[0] != 0
+                                ? bytes
+                                : Arrays.copyOfRange(bytes, 1, bytes.length)
+                    )
+            );
+        } else {
+            results.add(rlp(new byte[0]));
+        }
+    }
+
+    private static BigInteger decodeInteger(V3Type type, ByteBuffer bb, boolean external) {
+        final byte[] bytes = external ? unrlp(bb) : readBytes(type.bitLen / Byte.SIZE, bb);
         return type.unsigned
                 ? new BigInteger(1, bytes)
                 : new BigInteger(bytes);
     }
 
-    private static void encodeTuple(V3Type tupleType, Object[] tuple, List<byte[]> results) {
+    private static void encodeTuple(V3Type tupleType, Object[] tuple, boolean external, List<byte[]> results) {
         validateLength(tupleType.elementTypes.length, tuple.length);
         final Object[] out = new Object[tupleType.elementTypes.length];
         for(int i = 0; i < out.length; i++) {
-            encode(tupleType.elementTypes[i], tuple[i], results);
+            encode(tupleType.elementTypes[i], tuple[i], external, results);
         }
     }
 
-    private static Object[] decodeTuple(V3Type tupleType, ByteBuffer bb) {
+    private static Object[] decodeTuple(V3Type tupleType, ByteBuffer bb, boolean external) {
         final Object[] out = new Object[tupleType.elementTypes.length];
         for(int i = 0; i < out.length; i++) {
-            out[i] = decode(tupleType.elementTypes[i], bb);
+            out[i] = decode(tupleType.elementTypes[i], bb, external);
         }
         return out;
     }
 
-    private static void encodeArray(V3Type type, Object arr, List<byte[]> results) {
+    private static void encodeArray(V3Type type, Object arr, boolean external, List<byte[]> results) {
         final V3Type et = type.elementType;
         switch (et.typeCode) {
         case V3Type.TYPE_CODE_BOOLEAN: encodeBooleanArray(type, (boolean[]) arr, results); return;
         case V3Type.TYPE_CODE_BYTE: encodeByteArray(type, arr, results); return;
-        case V3Type.TYPE_CODE_BIG_INTEGER: encodeIntegerArray(type, (BigInteger[]) arr, results); return;
+        case V3Type.TYPE_CODE_BIG_INTEGER: encodeIntegerArray(type, (BigInteger[]) arr, external, results); return;
         case V3Type.TYPE_CODE_ARRAY:
-        case V3Type.TYPE_CODE_TUPLE: encodeObjectArray(type, (Object[]) arr, results); return;
+        case V3Type.TYPE_CODE_TUPLE: encodeObjectArray(type, (Object[]) arr, external, results); return;
         default: throw new AssertionError();
         }
     }
 
-    private static Object decodeArray(V3Type type, ByteBuffer bb) {
+    private static Object decodeArray(V3Type type, ByteBuffer bb, boolean external) {
         final V3Type et = type.elementType;
         switch (et.typeCode) {
         case V3Type.TYPE_CODE_BOOLEAN: return decodeBooleanArray(type, bb);
         case V3Type.TYPE_CODE_BYTE: return decodeByteArray(type, bb);
-        case V3Type.TYPE_CODE_BIG_INTEGER: return decodeIntegerArray(type, bb);
+        case V3Type.TYPE_CODE_BIG_INTEGER: return decodeIntegerArray(type, bb, external);
         case V3Type.TYPE_CODE_ARRAY:
-        case V3Type.TYPE_CODE_TUPLE: return decodeObjectArray(type, bb);
+        case V3Type.TYPE_CODE_TUPLE: return decodeObjectArray(type, bb, external);
         default: throw new AssertionError();
         }
     }
@@ -216,39 +238,39 @@ public final class V3 {
                 : raw;
     }
 
-    private static void encodeIntegerArray(V3Type type, BigInteger[] arr, List<byte[]> results) {
+    private static void encodeIntegerArray(V3Type type, BigInteger[] arr, boolean external, List<byte[]> results) {
         validateLength(type.arrayLen, arr.length);
         if (type.arrayLen == -1) {
             results.add(rlp(arr.length));
         }
         for (BigInteger bigInteger : arr) {
-            encodeInteger(type.elementType.bitLen / Byte.SIZE, bigInteger, results);
+            encodeInteger(type.elementType.bitLen / Byte.SIZE, bigInteger, external, results);
         }
     }
 
-    private static BigInteger[] decodeIntegerArray(V3Type type, ByteBuffer bb) {
+    private static BigInteger[] decodeIntegerArray(V3Type type, ByteBuffer bb, boolean external) {
         final BigInteger[] bigInts = new BigInteger[getLength(type, bb)];
         for (int i = 0; i < bigInts.length; i++) {
-            bigInts[i] = decodeInteger(type.elementType, bb);
+            bigInts[i] = decodeInteger(type.elementType, bb, external);
         }
         return bigInts;
     }
 
-    private static void encodeObjectArray(V3Type type, Object[] objects, List<byte[]> results) {
+    private static void encodeObjectArray(V3Type type, Object[] objects, boolean external, List<byte[]> results) {
         validateLength(type.arrayLen, objects.length);
         if (type.arrayLen == -1) {
             results.add(rlp(objects.length));
         }
         for (Object object : objects) {
-            encode(type.elementType, object, results);
+            encode(type.elementType, object, external, results);
         }
     }
 
-    private static Object decodeObjectArray(V3Type type, ByteBuffer bb) {
+    private static Object decodeObjectArray(V3Type type, ByteBuffer bb, boolean external) {
         final int len = getLength(type, bb);
         final Object[] in = (Object[]) Array.newInstance(type.elementType.clazz, len); // reflection
         for (int i = 0; i < in.length; i++) {
-            in[i] = decode(type.elementType, bb);
+            in[i] = decode(type.elementType, bb, external);
         }
         return in;
     }
@@ -303,16 +325,17 @@ public final class V3 {
         throw new Error();
     }
 
-    private static byte[][] header(int functionNumber) {
+    private static byte[][] header(int functionNumber, boolean external) {
         if (functionNumber < 0) throw new IllegalArgumentException();
         if (functionNumber < ID_MASK) {
             return new byte[][] {
-                    functionNumber == 0
-                            ? single((byte)0)
-                            : Integers.toBytes(functionNumber)
+                    single((byte) ((external ? VERSION_ID_EXTERNAL : VERSION_ID_INTERNAL)
+                                                | (functionNumber == 0
+                                                ? (byte)0
+                                                : Integers.toBytes(functionNumber)[0])))
             };
         }
-        return new byte[][] { single(ID_MASK), rlp(functionNumber - ID_MASK) };
+        return new byte[][] { single((byte) ((external ? VERSION_ID_EXTERNAL : VERSION_ID_INTERNAL) | ID_MASK)), rlp(functionNumber - ID_MASK) };
     }
 
     private static byte[] single(byte val) {
