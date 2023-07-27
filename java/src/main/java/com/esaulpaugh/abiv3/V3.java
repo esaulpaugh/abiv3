@@ -34,12 +34,8 @@ public final class V3 {
     static final byte ID_MASK = (byte) ~VERSION_MASK; // 0x3f (decimal 63), the complement of VERSION_MASK
 
     public static byte[] encodeFunction(int functionNumber, V3Type tupleType, Object[] vals, boolean external) {
-        final List<byte[]> results = new ArrayList<>();
-        final byte[][] header = header(functionNumber, external);
-        results.add(header[0]);
-        if (header.length == 2) {
-            results.add(header[1]);
-        }
+        if (functionNumber < 0) throw new IllegalArgumentException();
+        final List<byte[]> results = external ? headerExternal(functionNumber) : headerInternal(functionNumber);
         encodeTuple(tupleType, vals, external, results);
         int len = 0;
         for (byte[] result : results) {
@@ -52,26 +48,30 @@ public final class V3 {
         return encoding.array();
     }
 
-    public static Object[] decodeFunction(V3Type tupleType, byte[] buffer, boolean external) {
+    public static Object[] decodeFunction(V3Type tupleType, byte[] buffer) {
         final ByteBuffer bb = ByteBuffer.wrap(buffer);
         final byte zeroth = bb.get();
         final int versionBits = zeroth & VERSION_MASK;
-        if (versionBits != VERSION_ID_INTERNAL && versionBits != VERSION_ID_EXTERNAL) {
+        if (versionBits == VERSION_ID_INTERNAL) {
+            long fnNumber = decodeInteger(4, true, bb, false).longValueExact();
+            if (fnNumber < 0) throw new AssertionError();
+        } else if (versionBits == VERSION_ID_EXTERNAL) {
+            long fnNumber = zeroth & ID_MASK;
+            if (fnNumber == ID_MASK) {
+                final int first = bb.get() & 0xff;
+                if (first > 0xb7) throw new IllegalArgumentException("invalid function ID format");
+                if (first < 0x80) {
+                    fnNumber = first;
+                } else {
+                    int len = first - 0x80;
+                    fnNumber = ID_MASK + Integers.getLong(readBytes(len, bb), 0, len);
+                }
+                if (fnNumber < 0) throw new AssertionError();
+            }
+        } else {
             throw new IllegalArgumentException();
         }
-        long fnNumber = zeroth & ID_MASK;
-        if (fnNumber == ID_MASK) {
-            final int first = bb.get() & 0xff;
-            if (first > 0xb7) throw new IllegalArgumentException("invalid function ID format");
-            if (first < 0x80) {
-                fnNumber = first;
-            } else {
-                int len = first - 0x80;
-                fnNumber = ID_MASK + Integers.getLong(readBytes(len, bb), 0, len);
-            }
-            if (fnNumber < 0) throw new AssertionError();
-        }
-        return decodeTuple(tupleType, bb, external);
+        return decodeTuple(tupleType, bb, versionBits == VERSION_ID_EXTERNAL);
     }
 
     private static void encode(V3Type t, Object val, boolean external, List<byte[]> results) {
@@ -87,7 +87,7 @@ public final class V3 {
     private static Object decode(V3Type type, ByteBuffer bb, boolean external) {
         switch (type.typeCode) {
         case V3Type.TYPE_CODE_BOOLEAN: return decodeBoolean(bb);
-        case V3Type.TYPE_CODE_BIG_INTEGER: return decodeInteger(type, bb, external);
+        case V3Type.TYPE_CODE_BIG_INTEGER: return decodeInteger(type.bitLen / Byte.SIZE, type.unsigned, bb, external);
         case V3Type.TYPE_CODE_ARRAY: return decodeArray(type, bb, external);
         case V3Type.TYPE_CODE_TUPLE: return decodeTuple(type, bb, external);
         default: throw new AssertionError();
@@ -141,9 +141,9 @@ public final class V3 {
         }
     }
 
-    private static BigInteger decodeInteger(V3Type type, ByteBuffer bb, boolean external) {
-        final byte[] bytes = external ? unrlp(bb) : readBytes(type.bitLen / Byte.SIZE, bb);
-        return type.unsigned
+    private static BigInteger decodeInteger(int byteLen, boolean unsigned, ByteBuffer bb, boolean external) {
+        final byte[] bytes = external ? unrlp(bb) : readBytes(byteLen, bb);
+        return unsigned
                 ? new BigInteger(1, bytes)
                 : new BigInteger(bytes);
     }
@@ -251,7 +251,7 @@ public final class V3 {
     private static BigInteger[] decodeIntegerArray(V3Type type, ByteBuffer bb, boolean external) {
         final BigInteger[] bigInts = new BigInteger[getLength(type, bb)];
         for (int i = 0; i < bigInts.length; i++) {
-            bigInts[i] = decodeInteger(type.elementType, bb, external);
+            bigInts[i] = decodeInteger(type.elementType.bitLen / Byte.SIZE, type.elementType.unsigned, bb, external);
         }
         return bigInts;
     }
@@ -325,17 +325,26 @@ public final class V3 {
         throw new Error();
     }
 
-    private static byte[][] header(int functionNumber, boolean external) {
-        if (functionNumber < 0) throw new IllegalArgumentException();
+    private static List<byte[]> headerExternal(int functionNumber) {
+        final List<byte[]> results = new ArrayList<>(2);
         if (functionNumber < ID_MASK) {
-            return new byte[][] {
-                    single((byte) ((external ? VERSION_ID_EXTERNAL : VERSION_ID_INTERNAL)
-                                                | (functionNumber == 0
-                                                ? (byte)0
-                                                : Integers.toBytes(functionNumber)[0])))
-            };
+            results.add(
+                    functionNumber == 0
+                            ? single(VERSION_ID_EXTERNAL)
+                            : single((byte) (VERSION_ID_EXTERNAL | Integers.toBytes(functionNumber)[0]))
+            );
+        } else {
+            results.add(single((byte) (VERSION_ID_EXTERNAL | ID_MASK)));
+            results.add(rlp(functionNumber - ID_MASK));
         }
-        return new byte[][] { single((byte) ((external ? VERSION_ID_EXTERNAL : VERSION_ID_INTERNAL) | ID_MASK)), rlp(functionNumber - ID_MASK) };
+        return results;
+    }
+
+    private static List<byte[]> headerInternal(int functionNumber) {
+        final List<byte[]> results = new ArrayList<>(2);
+        results.add(single(VERSION_ID_INTERNAL));
+        encodeInteger(4, BigInteger.valueOf(functionNumber), false, results);
+        return results;
     }
 
     private static byte[] single(byte val) {
