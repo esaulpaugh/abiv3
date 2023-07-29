@@ -109,7 +109,7 @@ class V3:
         if code == V3Type.TYPE_CODE_BOOLEAN:
             V3.encode_boolean(obj, results)
         elif code == V3Type.TYPE_CODE_INTEGER:
-            V3.encode_integer(v3_type.bitLen / 8, obj, external, results)
+            V3.encode_integer(int(v3_type.bitLen / 8), obj, external, results)
         elif code == V3Type.TYPE_CODE_ARRAY:
             V3.encode_array(v3_type, obj, external, results)
         elif code == V3Type.TYPE_CODE_TUPLE:
@@ -146,34 +146,39 @@ class V3:
     @staticmethod
     def encode_integer(byte_len, val, external, results):
         if external:
-            V3.encode_integer_external(val, results)
+            V3.encode_integer_external(byte_len, val, results)
             return
-        byte_width = int(byte_len)
-        extended = bytearray(byte_width)
         minimal_bytes = Utils.to_bytes(val)
+        the_bytes = V3.extend(byte_len, minimal_bytes, val < 0)
+        results.append(the_bytes)
+
+    @staticmethod
+    def encode_integer_external(byte_len, val, results):
+        if val == 0:
+            results.append(V3.rlp_int(0))
+        else:
+            minimal_bytes = Utils.to_bytes(val)
+            the_bytes = V3.extend(byte_len, minimal_bytes, val < 0)
+            rlp = V3.rlp(the_bytes)
+            results.append(rlp)
+
+    @staticmethod
+    def extend(desired_len, minimal_bytes, negative):
+        extended = bytearray(desired_len)
         minimal_width = len(minimal_bytes)
-        padding_byte = 0xff if val < 0 else 0x00
-        j = byte_width - minimal_width
+        padding_byte = 0xff if negative else 0x00
+        j = desired_len - minimal_width
         for i in range(0, j):
             extended[i] = padding_byte
         for i in range(0, minimal_width):
             extended[j] = minimal_bytes[i]
             j = j + 1
-        results.append(extended)
-
-    @staticmethod
-    def encode_integer_external(val, results):
-        if val == 0:
-            results.append(V3.rlp_int(0))
-        else:
-            minimal_bytes = Utils.to_bytes(val)
-            rlp = V3.rlp(minimal_bytes)
-            results.append(rlp)
+        return extended
 
     @staticmethod
     def decode_integer(byte_len, unsigned, bb, external):
         the_bytes = V3.unrlp(bb) if external else bb.array(byte_len)
-        return int.from_bytes(the_bytes, byteorder='big', signed=(False if unsigned else True))
+        return int.from_bytes(the_bytes, byteorder='big', signed=(False if unsigned or byte_len > len(the_bytes) else True))
 
     @staticmethod
     def encode_array(v3_type, arr, external, results):
