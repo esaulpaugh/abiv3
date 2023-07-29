@@ -59,26 +59,24 @@ class V3:
                     fn_number = first
                 else:
                     the_len = first - 0x80
-                fn_number = V3.ID_MASK + int.from_bytes(bb.array(the_len), byteorder='big', signed=False)
-            if fn_number < 0:
-                raise Exception()
+                    fn_number = V3.ID_MASK + int.from_bytes(bb.array(the_len), byteorder='big')
         else:
             raise Exception()
-        fn_number = zeroth & V3.ID_MASK
-
         return V3.decode_tuple(schema, bb, external)
 
     @staticmethod
     def header_external(function_number):
         results = []
         if function_number < V3.ID_MASK:
-            results.append(
-                V3.single(V3.VERSION_ID_EXTERNAL) if function_number == 0
-                    else V3.single(V3.VERSION_ID_EXTERNAL | Utils.to_bytes_unsigned(function_number)[0])
-            )
+            if function_number == 0:
+                results.append(V3.single(V3.VERSION_ID_EXTERNAL))
+            else:
+                zzz = V3.VERSION_ID_EXTERNAL | Utils.to_bytes_unsigned(function_number)[0]
+                single = V3.single(zzz)
+                results.append(single)
         else:
             results.append(V3.single(V3.VERSION_ID_EXTERNAL | V3.ID_MASK))
-            results.append(V3.rlp(function_number - V3.ID_MASK))
+            results.append(V3.rlp_int(function_number - V3.ID_MASK))
         return results
 
     @staticmethod
@@ -86,17 +84,6 @@ class V3:
         results = [V3.single(V3.VERSION_ID_INTERNAL)]
         V3.encode_integer(4, function_number, False, results)
         return results
-
-    # @staticmethod
-    # def header(fn_num, results):
-    #     if fn_num < V3.ID_MASK:
-    #         if fn_num == 0:
-    #             results.append(bytes(b'\x00'))
-    #         else:
-    #             results.append(bytes(Utils.to_bytes_unsigned(fn_num)))
-    #     else:
-    #         results.append(bytes(b'\x3f'))
-    #         results.append(Utils.to_bytes_unsigned(fn_num - V3.ID_MASK))
 
     @staticmethod
     def validate_length(expected_len, actual_len):
@@ -158,6 +145,9 @@ class V3:
 
     @staticmethod
     def encode_integer(byte_len, val, external, results):
+        if external:
+            V3.encode_integer_external(val, results)
+            return
         byte_width = int(byte_len)
         extended = bytearray(byte_width)
         minimal_bytes = Utils.to_bytes(val)
@@ -170,6 +160,15 @@ class V3:
             extended[j] = minimal_bytes[i]
             j = j + 1
         results.append(extended)
+
+    @staticmethod
+    def encode_integer_external(val, results):
+        if val == 0:
+            results.append(V3.rlp_int(0))
+        else:
+            minimal_bytes = Utils.to_bytes(val)
+            rlp = V3.rlp(minimal_bytes)
+            results.append(rlp)
 
     @staticmethod
     def decode_integer(byte_len, unsigned, bb, external):
@@ -239,7 +238,7 @@ class V3:
         if v3_type.arrayLen == -1:
             results.append(V3.rlp_int(len(arr)))
         for e in arr:
-            V3.encode_integer(v3_type.elementType.bitLen / 8, e, external, results)
+            V3.encode_integer(int(v3_type.elementType.bitLen / 8), e, external, results)
 
     @staticmethod
     def decode_integer_array(v3_type, bb, external):
@@ -275,17 +274,22 @@ class V3:
         if data_len < 56:
             if data_len == 1:
                 first = byte_string[0]
-                return bytes([0x81, first]) if first < 0x00 else V3.single(first)
-            bb = ByteBuffer.allocate(1 + len(byte_string))
+                return bytes([0x81, first]) if first >= 0x80 else V3.single(first)
+            alloc_len = 1 + len(byte_string)
+            bb = ByteBuffer.allocate(alloc_len)
             bb.put(0x80 + data_len)
             bb.put(byte_string)
+            bb.rewind()
+            return bb.array(alloc_len)
         else:
             len_of_len = V3.len(data_len)
-            bb = ByteBuffer.allocate(1 + len_of_len + len(byte_string))
+            alloc_len = 1 + len_of_len + len(byte_string)
+            bb = ByteBuffer.allocate(alloc_len)
             bb.put(0xb7 + len_of_len)
             V3.put_long(data_len, bb)
             bb.put(byte_string)
-        return bb.array()
+            bb.rewind()
+            return bb.array(alloc_len)
 
     @staticmethod
     def unrlp(bb):
@@ -293,7 +297,8 @@ class V3:
         if lead < 0x80:
             return V3.single(lead)
         if lead < 0xB8:
-            return bb.array(lead - 0x80)
+            the_len = lead - 0x80
+            return b'' if the_len == 0 else bb.array(the_len)
         if lead < 0xC0:
             length_of_length = lead - 0xb7
             data_length = int.from_bytes(bb.array(length_of_length), byteorder='big')
