@@ -32,7 +32,7 @@ print(t.canonicalType)
 
 bool_type = TypeFactory.create("bool")
 
-enc = V3.encode_function(1, [bool_type], [True])
+enc = V3.encode_function(1, [bool_type], [True], False)
 valz = V3.decode_function([bool_type], enc)
 print(valz)
 
@@ -41,13 +41,13 @@ t = TypeFactory.create("((bool,bool)[])")
 # print(dec.elementType.canonicalType)
 # print(dec.elementType.elementType.canonicalType)
 
-enc = V3.encode_function(1, [t], [[[[True, False], [False, False], [False, True], [True, True]]]])
+enc = V3.encode_function(1, [t], [[[[True, False], [False, False], [False, True], [True, True]]]], False)
 print(binascii.hexlify(enc))
 valz = V3.decode_function([t], enc)
 print(valz)
 
 signed32 = TypeFactory.create('int32')
-print(V3.encode_function(16, [signed32], [-2]))
+print(V3.encode_function(16, [signed32], [-2], False))
 
 schema = [TypeFactory.create("int72[]")]
 ints = [
@@ -69,7 +69,7 @@ objects = [ints]
 
 print(objects)
 
-arr = V3.encode_function(31, schema, objects)
+arr = V3.encode_function(31, schema, objects, False)
 
 n = len(arr)
 print('len = ' + str(n))
@@ -87,7 +87,7 @@ print()
 
 print(objects)
 
-arr = V3.encode_function(62, schema, objects)
+arr = V3.encode_function(62, schema, objects, False)
 
 n = len(arr)
 print('len = ' + str(n))

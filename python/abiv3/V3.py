@@ -20,15 +20,15 @@ from abiv3.V3Type import V3Type
 # next tuple len list type str sum bytes int
 class V3:
 
-    VERSION_ID = 0
+    VERSION_ID_INTERNAL = 0b0000_0000
+    VERSION_ID_EXTERNAL = 0b0100_0000
     VERSION_MASK = 0b1100_0000
     ID_MASK = 0b0011_1111  # 0x3f (decimal 63), the complement of VERSION_MASK
 
     @staticmethod
-    def encode_function(function_number, schema, vals):
-        results = []
-        V3.header(function_number, results)
-        V3.encode_tuple(schema, vals, results)
+    def encode_function(function_number, schema, vals, external):
+        results = V3.header_external(function_number) if external else V3.header_internal(function_number)
+        V3.encode_tuple(schema, vals, external, results)
         buf_len = 0
         for e in results:
             buf_len = buf_len + len(e)
@@ -43,22 +43,60 @@ class V3:
         bb = ByteBuffer.wrap(data)
         zeroth = bb.get()
         version = zeroth & V3.VERSION_MASK
-        if version != V3.VERSION_ID:
+        external = True
+        if version == V3.VERSION_ID_INTERNAL:
+            fn_number = V3.decode_integer(4, True, bb, False)
+            if fn_number < 0:
+                raise Exception()
+            external = False
+        elif version == V3.VERSION_ID_EXTERNAL:
+            fn_number = zeroth & V3.ID_MASK
+            if fn_number == V3.ID_MASK:
+                first = bb.get()  # & 0xff
+                if first > 0xb7:
+                    raise Exception()
+                if first < 0x80:
+                    fn_number = first
+                else:
+                    the_len = first - 0x80
+                fn_number = V3.ID_MASK + int.from_bytes(bb.array(the_len), byteorder='big', signed=False)
+            if fn_number < 0:
+                raise Exception()
+        else:
             raise Exception()
         fn_number = zeroth & V3.ID_MASK
 
-        return V3.decode_tuple(schema, bb)
+        return V3.decode_tuple(schema, bb, external)
 
     @staticmethod
-    def header(fn_num, results):
-        if fn_num < V3.ID_MASK:
-            if fn_num == 0:
-                results.append(bytes(b'\x00'))
-            else:
-                results.append(bytes(Utils.to_bytes_unsigned(fn_num)))
+    def header_external(function_number):
+        results = []
+        if function_number < V3.ID_MASK:
+            results.append(
+                V3.single(V3.VERSION_ID_EXTERNAL) if function_number == 0
+                    else V3.single(V3.VERSION_ID_EXTERNAL | Utils.to_bytes_unsigned(function_number)[0])
+            )
         else:
-            results.append(bytes(b'\x3f'))
-            results.append(Utils.to_bytes_unsigned(fn_num - V3.ID_MASK))
+            results.append(V3.single(V3.VERSION_ID_EXTERNAL | V3.ID_MASK))
+            results.append(V3.rlp(function_number - V3.ID_MASK))
+        return results
+
+    @staticmethod
+    def header_internal(function_number):
+        results = [V3.single(V3.VERSION_ID_INTERNAL)]
+        V3.encode_integer(4, function_number, False, results)
+        return results
+
+    # @staticmethod
+    # def header(fn_num, results):
+    #     if fn_num < V3.ID_MASK:
+    #         if fn_num == 0:
+    #             results.append(bytes(b'\x00'))
+    #         else:
+    #             results.append(bytes(Utils.to_bytes_unsigned(fn_num)))
+    #     else:
+    #         results.append(bytes(b'\x3f'))
+    #         results.append(Utils.to_bytes_unsigned(fn_num - V3.ID_MASK))
 
     @staticmethod
     def validate_length(expected_len, actual_len):
@@ -66,43 +104,43 @@ class V3:
             raise Exception(str(expected_len) + ' != ' + str(actual_len))
 
     @staticmethod
-    def encode_tuple(schema, vals, results):
+    def encode_tuple(schema, vals, external, results):
         V3.validate_length(len(schema), len(vals))
         for i in range(0, len(schema)):
-            V3.encode(schema[i], vals[i], results)
+            V3.encode(schema[i], vals[i], external, results)
 
     @staticmethod
-    def decode_tuple(schema, bb):
+    def decode_tuple(schema, bb, external):
         elements = []
         for i in range(0, len(schema)):
-            elements.append(V3.decode(schema[i], bb))
+            elements.append(V3.decode(schema[i], bb, external))
         return elements
 
     @staticmethod
-    def encode(v3_type, obj, results):
+    def encode(v3_type, obj, external, results):
         code = v3_type.typeCode
         if code == V3Type.TYPE_CODE_BOOLEAN:
             V3.encode_boolean(obj, results)
         elif code == V3Type.TYPE_CODE_INTEGER:
-            V3.encode_integer(v3_type, obj, results)
+            V3.encode_integer(v3_type.bitLen / 8, obj, external, results)
         elif code == V3Type.TYPE_CODE_ARRAY:
-            V3.encode_array(v3_type, obj, results)
+            V3.encode_array(v3_type, obj, external, results)
         elif code == V3Type.TYPE_CODE_TUPLE:
-            V3.encode_tuple(v3_type.elementTypes, obj, results)
+            V3.encode_tuple(v3_type.elementTypes, obj, external, results)
         else:
             raise Exception('??')
 
     @staticmethod
-    def decode(v3_type, bb):
+    def decode(v3_type, bb, external):
         code = v3_type.typeCode
         if code == V3Type.TYPE_CODE_BOOLEAN:
             return V3.decode_boolean(bb)
         if code == V3Type.TYPE_CODE_INTEGER:
-            return V3.decode_integer(v3_type, bb)
+            return V3.decode_integer(v3_type.bitLen / 8, v3_type.unsigned, bb, external)
         if code == V3Type.TYPE_CODE_ARRAY:
-            return V3.decode_array(v3_type, bb)
+            return V3.decode_array(v3_type, bb, external)
         if code == V3Type.TYPE_CODE_TUPLE:
-            return V3.decode_tuple(v3_type.elementTypes, bb)
+            return V3.decode_tuple(v3_type.elementTypes, bb, external)
         raise Exception('??')
 
     @staticmethod
@@ -119,8 +157,8 @@ class V3:
         raise Exception('illegal boolean RLP: expected 0x1 or 0x0')
 
     @staticmethod
-    def encode_integer(v3_type, val, results):
-        byte_width = int(v3_type.bitLen / 8)
+    def encode_integer(byte_len, val, external, results):
+        byte_width = int(byte_len)
         extended = bytearray(byte_width)
         minimal_bytes = Utils.to_bytes(val)
         minimal_width = len(minimal_bytes)
@@ -134,13 +172,12 @@ class V3:
         results.append(extended)
 
     @staticmethod
-    def decode_integer(v3_type, bb):
-        byte_len = int(v3_type.bitLen / 8)
-        the_bytes = bb.array(byte_len)
-        return int.from_bytes(the_bytes, byteorder='big', signed=False if v3_type.unsigned else True)
+    def decode_integer(byte_len, unsigned, bb, external):
+        the_bytes = V3.unrlp(bb) if external else bb.array(byte_len)
+        return int.from_bytes(the_bytes, byteorder='big', signed=(False if unsigned else True))
 
     @staticmethod
-    def encode_array(v3_type, arr, results):
+    def encode_array(v3_type, arr, external, results):
         if v3_type.elementType.typeCode == V3Type.TYPE_CODE_BYTE:
             the_bytes = bytes(arr, 'utf-8') if v3_type.isString else arr
             V3.validate_length(v3_type.arrayLen, len(the_bytes))
@@ -148,12 +185,12 @@ class V3:
         elif v3_type.elementType.typeCode == V3Type.TYPE_CODE_BOOLEAN:
             V3.encode_boolean_array(v3_type, arr, results)
         elif v3_type.elementType.typeCode == V3Type.TYPE_CODE_INTEGER:
-            V3.encode_integer_array(v3_type, arr, results)
+            V3.encode_integer_array(v3_type, arr, external, results)
         else:
-            V3.encode_object_array(v3_type, arr, results)
+            V3.encode_object_array(v3_type, arr, external, results)
 
     @staticmethod
-    def decode_array(v3_type, bb):
+    def decode_array(v3_type, bb, external):
         if v3_type.elementType.typeCode == V3Type.TYPE_CODE_BYTE:
             the_len = V3.get_length(v3_type, bb)
             the_bytes = bb.array(the_len)
@@ -163,8 +200,8 @@ class V3:
         elif v3_type.elementType.typeCode == V3Type.TYPE_CODE_BOOLEAN:
             return V3.decode_boolean_array(v3_type, bb)
         elif v3_type.elementType.typeCode == V3Type.TYPE_CODE_INTEGER:
-            return V3.decode_integer_array(v3_type, bb)
-        return V3.decode_object_array(v3_type, bb)
+            return V3.decode_integer_array(v3_type, bb, external)
+        return V3.decode_object_array(v3_type, bb, external)
 
     @staticmethod
     def encode_boolean_array(v3_type, booleans, results):
@@ -186,7 +223,7 @@ class V3:
             return []
         byte_len = int(V3.round_length_up(the_len, 8) / 8)
         the_bytes = bb.array(byte_len)
-        binary = '{0:b}'.format(int.from_bytes(the_bytes, byteorder='big'))
+        binary = '{0:b}'.format(int.from_bytes(the_bytes, byteorder='big', signed=False))
         num_chars = len(binary)
         implied_zeros = the_len - num_chars
         booleans = []
@@ -197,35 +234,35 @@ class V3:
         return booleans
 
     @staticmethod
-    def encode_integer_array(v3_type, arr, results):
+    def encode_integer_array(v3_type, arr, external, results):
         V3.validate_length(v3_type.arrayLen, len(arr))
         if v3_type.arrayLen == -1:
             results.append(V3.rlp_int(len(arr)))
         for e in arr:
-            V3.encode_integer(v3_type.elementType, e, results)
+            V3.encode_integer(v3_type.elementType.bitLen / 8, e, external, results)
 
     @staticmethod
-    def decode_integer_array(v3_type, bb):
+    def decode_integer_array(v3_type, bb, external):
         the_len = V3.get_length(v3_type, bb)
         out = []
         for i in range(0, the_len):
-            out.append(V3.decode_integer(v3_type.elementType, bb))
+            out.append(V3.decode_integer(int(v3_type.elementType.bitLen / 8), v3_type.elementType.unsigned, bb, external))
         return out
 
     @staticmethod
-    def encode_object_array(v3_type, arr, results):
+    def encode_object_array(v3_type, arr, external, results):
         V3.validate_length(v3_type.arrayLen, len(arr))
         if v3_type.arrayLen == -1:
             results.append(V3.rlp_int(len(arr)))
         for i in range(0, len(arr)):
-            V3.encode(v3_type.elementType, arr[i], results)
+            V3.encode(v3_type.elementType, arr[i], external, results)
 
     @staticmethod
-    def decode_object_array(v3_type, bb):
+    def decode_object_array(v3_type, bb, external):
         the_len = V3.get_length(v3_type, bb)
         found = []
         for i in range(0, the_len):
-            found.append(V3.decode(v3_type.elementType, bb))
+            found.append(V3.decode(v3_type.elementType, bb, external))
         return found
 
     @staticmethod
@@ -298,4 +335,4 @@ class V3:
 
     @staticmethod
     def get_length(v3_type, bb):
-        return int.from_bytes(V3.unrlp(bb), byteorder='big') if v3_type.arrayLen == -1 else v3_type.arrayLen
+        return int.from_bytes(V3.unrlp(bb), byteorder='big', signed=False) if v3_type.arrayLen == -1 else v3_type.arrayLen
