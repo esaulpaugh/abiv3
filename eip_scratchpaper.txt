@@ -15,6 +15,9 @@ For the forseeable future, Layer 2 protocols such as optimistic rollups will inc
 3. Layer-2 computation costs will be inconsequential compared to costs that scale with calldata length (such as cryptographic verification).
 4. If a proposed standard's calldata is significantly more expensive than custom hacked calldata, that standard will fail to achieve widespread adoption.
 
+Alternatives:
+
+
 --example code--
 object "Contract1" {
     code {
@@ -64,3 +67,6 @@ object "Contract1" {
         return(0, 0)
     }
 }
+
+TODO: Varint assignment move
+TODO: compare compressed ABIv2 to uncompressed ABIv3. gzip max preset, 2MB blob. then compare both to compressed ABIv3
