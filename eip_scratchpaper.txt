@@ -70,3 +70,4 @@ object "Contract1" {
 
 TODO: Varint assignment move
 TODO: compare compressed ABIv2 to uncompressed ABIv3. gzip max preset, 2MB blob. then compare both to compressed ABIv3
+TODO: variable-length integer decode precompile opcode in EOF and/or EVM1
