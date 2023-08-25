@@ -138,7 +138,6 @@ public final class Integers {
      * @return the rounded-up value
      */
     public static int roundLengthUp(int len, int powerOfTwo) {
-        int mod = mod(len, powerOfTwo);
-        return mod != 0 ? len + (powerOfTwo - mod) : len;
+        return -powerOfTwo & (len + (powerOfTwo - 1));
     }
 }
