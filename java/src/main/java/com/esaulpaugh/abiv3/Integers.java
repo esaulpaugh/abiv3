@@ -125,10 +125,6 @@ public final class Integers {
         o.put(temp, j, Long.BYTES - j);
     }
 
-    public static int mod(int val, int powerOfTwo) {
-        return val & (powerOfTwo - 1);
-    }
-
     /**
      * Rounds a length up to the nearest multiple of {@code powerOfTwo}. If {@code len} is already a multiple, method has
      * no effect.
