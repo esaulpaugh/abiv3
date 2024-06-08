@@ -11,10 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import binascii
-
 from abiv3.TypeFactory import TypeFactory
 from abiv3.V3 import V3
+
+
+def to_hex(data):
+    return ''.join(format(b, '02x') for b in data)
+
 
 # schema = [V3Type.BOOL, V3Type.INT256, V3Type.BYTES, V3Type.INT256_ARRAY_3, V3Type.UFIXED_128_X_18]
 # objects = [True, 5, b'\x03\x09', [10, -16777215, 0], -10.9]
@@ -42,7 +45,7 @@ t = TypeFactory.create("((bool,bool)[])")
 # print(dec.elementType.elementType.canonicalType)
 
 enc = V3.encode_function(1, [t], [[[[True, False], [False, False], [False, True], [True, True]]]], True)
-print(binascii.hexlify(enc))
+print(to_hex(enc))  # b'41040100000000010101'
 valz = V3.decode_function([t], enc)
 print(valz)
 
@@ -74,7 +77,7 @@ arr = V3.encode_function(31, schema, objects, True)
 
 n = len(arr)
 print('len = ' + str(n))
-print(binascii.hexlify(arr))
+print(to_hex(arr))  # b'5f0489fffffffffffffffffe80890000000000000000ff8900000000000000ffff'
 # for i in range(0, n):
 #     print(Utils.to_signed_byte(arr[i]))
 
@@ -92,7 +95,7 @@ arr = V3.encode_function(62, schema, objects, True)
 
 n = len(arr)
 print('len = ' + str(n))
-print(binascii.hexlify(arr))
+print(to_hex(arr))  # b'7e0489fffffffffffffffffe80890000000000000000ff89000000000000010000'
 # for i in range(0, n):
 #     print(Utils.to_signed_byte(arr[i]))
 
