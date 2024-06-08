@@ -42,18 +42,18 @@ def last_index_from(string, ch, from_index) -> int:
     return -1
 
 
-def find_subtuple_end(parent_type_str, arg_start) -> int:
-    depth = 1
+def find_subtuple_end(parent_type_str: str, arg_start: int) -> int:
+    depth = 0
     i = arg_start
     while True:
         i = i + 1
-        x_ord = ord(parent_type_str[i])
-        if x_ord <= ord(')'):
-            if x_ord == ord(')'):
-                if depth <= 1:
+        x = parent_type_str[i]
+        if x <= ')':
+            if x == ')':
+                if depth == 0:
                     return i
                 depth = depth - 1
-            elif x_ord == ord('('):
+            elif x == '(':
                 depth = depth + 1
 
 
